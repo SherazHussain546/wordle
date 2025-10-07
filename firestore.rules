@@ -1,110 +1,115 @@
 /**
- * @fileoverview Firestore Security Rules for the Wordle game application.
+ * @fileOverview Firestore Security Rules for the Wordle game application.
  *
  * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for user-specific data,
- * while allowing public read access to game-related data (daily words, word lists).
+ * This ruleset enforces a strict user-ownership model for user-specific data
+ * and allows public read access to game-related data (daily words and word list).
  *
  * Data Structure:
- * - /users/{userId}: Stores user profiles; only the authenticated user can read/write their own profile.
- * - /users/{userId}/gameStates/{gameStateId}: Stores game states for each user; only the authenticated user can manage their own game states.
- * - /users/{userId}/statistics: Stores user statistics; only the authenticated user can manage their own statistics.
- * - /dailyWords/{dailyWordDate}: Stores daily words; publicly readable, write access is denied.
- * - /wordList/{word}: Stores a list of valid words; publicly readable, write access is denied.
+ * - /users/{userId}: Stores user profiles, accessible only by the user.
+ * - /users/{userId}/gameStates/{gameStateId}: Stores game states for each user,
+ *   accessible only by the user. The gameStateId is a composite of userId and dailyWordDate.
+ * - /users/{userId}/statistics: Stores user statistics, accessible only by the user.
+ * - /dailyWords/{dailyWordDate}: Stores the daily word, publicly readable.
+ * - /wordList/{word}: Stores the valid word list, publicly readable.
  *
  * Key Security Decisions:
- * - Users can only access their own data under their respective /users/{userId} path.
- * - Public read access is granted to /dailyWords and /wordList to facilitate gameplay.
- * - No listing of users is allowed.
+ * - User listing is disallowed to protect user privacy.
+ * - Game states are owned by the user and can only be created, updated, or deleted
+ *   by the user. The userId is denormalized into the GameState documents to ensure
+ *   authorization independence.
+ * - Daily words and word list are publicly readable but not writable by clients.
+ * - All write operations are explicitly validated against the user's authentication
+ *   state.
  *
  * Denormalization for Authorization:
- * - The `GameState` documents denormalize the `userId` to enable ownership checks without additional reads.
+ * - The `GameState` documents contain a denormalized `userId` field. This allows
+ *   rules to validate ownership without additional `get()` calls.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Manages user profiles. Only the authenticated user can read and write their own profile.
+     * @description Controls access to user profile documents.
      * @path /users/{userId}
-     * @allow (create, update, delete) if request.auth.uid == userId
-     * @allow (get, list) if request.auth.uid == userId
-     * @deny (create, update, delete) if request.auth.uid != userId
-     * @deny (get, list) if request.auth.uid != userId
-     * @principle Enforces user ownership for user profile data.
+     * @allow (create) Signed-in user can create their own profile.
+     * @allow (get, list, update, delete) Signed-in user can only access their own profile.
+     * @deny (create) Signed-in user cannot create a profile with a different userId.
+     * @deny (update, delete) Signed-in user cannot modify or delete someone else's profile.
+     * @principle Enforces document ownership for user profiles.
      */
     match /users/{userId} {
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
 
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+      function isSignedIn() {
+        return request.auth != null;
       }
 
       allow get: if isOwner(userId);
-      allow list: if false; // no listing of users
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
-
-      /**
-       * @description Manages game states for a user. Only the authenticated user can read and write their own game states.
-       * @path /users/{userId}/gameStates/{gameStateId}
-       * @allow (create, update, delete) if request.auth.uid == userId
-       * @allow (get, list) if request.auth.uid == userId
-       * @deny (create, update, delete) if request.auth.uid != userId
-       * @deny (get, list) if request.auth.uid != userId
-       * @principle Enforces user ownership for game state data.
-       */
-      match /gameStates/{gameStateId} {
-        function isOwnerOfGameState(userId) {
-          return request.auth.uid == userId;
-        }
-
-        function isExistingOwnerOfGameState(userId) {
-          return isOwnerOfGameState(userId) && resource != null;
-        }
-
-        allow get: if isOwnerOfGameState(userId);
-        allow list: if isOwnerOfGameState(userId);
-        allow create: if isOwnerOfGameState(userId) && request.resource.data.userId == userId;
-        allow update: if isExistingOwnerOfGameState(userId) && resource.data.userId == request.resource.data.userId;
-        allow delete: if isExistingOwnerOfGameState(userId);
-      }
-
-      /**
-       * @description Manages user statistics. Only the authenticated user can read and write their own statistics.
-       * @path /users/{userId}/statistics
-       * @allow (create, update, delete) if request.auth.uid == userId
-       * @allow (get, list) if request.auth.uid == userId
-       * @deny (create, update, delete) if request.auth.uid != userId
-       * @deny (get, list) if request.auth.uid != userId
-       * @principle Enforces user ownership for statistics data.
-       */
-      match /statistics {
-        function isOwnerOfStatistics(userId) {
-          return request.auth.uid == userId;
-        }
-
-        function isExistingOwnerOfStatistics(userId) {
-          return isOwnerOfStatistics(userId) && resource != null;
-        }
-
-        allow get: if isOwnerOfStatistics(userId);
-        allow list: if isOwnerOfStatistics(userId);
-        allow create: if isOwnerOfStatistics(userId);
-        allow update: if isExistingOwnerOfStatistics(userId) && resource.data.userId == request.resource.data.userId;
-        allow delete: if isExistingOwnerOfStatistics(userId);
-      }
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isSignedIn() && isOwner(userId) && resource.data.id == userId;
+      allow delete: if isSignedIn() && isOwner(userId) && resource.data.id == userId;
     }
 
     /**
-     * @description Manages daily words. Publicly readable, but write access is denied to all.
+     * @description Controls access to game state documents for a specific user.
+     * @path /users/{userId}/gameStates/{gameStateId}
+     * @allow (create) Signed-in user can create a new game state for themselves.
+     * @allow (get, list, update, delete) Signed-in user can only access their own game states.
+     * @deny (create) Signed-in user cannot create a game state for a different user.
+     * @deny (update, delete) Signed-in user cannot modify or delete someone else's game state.
+     * @principle Enforces document ownership for game states.
+     */
+    match /users/{userId}/gameStates/{gameStateId} {
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isSignedIn() && isOwner(userId) && resource.data.userId == userId;
+      allow delete: if isSignedIn() && isOwner(userId) && resource.data.userId == userId;
+    }
+
+    /**
+     * @description Controls access to the statistics document for a specific user.
+     * @path /users/{userId}/statistics
+     * @allow (get, update) Signed-in user can only access their own statistics.
+     * @deny (create, delete) Statistics are auto-created and not deleted by clients.
+     * @deny (update) Signed-in user cannot modify someone else's statistics.
+     * @principle Enforces document ownership for user statistics.
+     */
+    match /users/{userId}/statistics {
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if false;
+      allow update: if isSignedIn() && isOwner(userId);
+      allow delete: if false;
+    }
+
+    /**
+     * @description Controls access to the daily word documents.
      * @path /dailyWords/{dailyWordDate}
-     * @allow get, list: if true
-     * @deny create, update, delete: if false
-     * @principle Allows public read access to daily word data.
+     * @allow (get, list) Everyone can read the daily word.
+     * @deny (create, update, delete) No one can modify or delete the daily word through the client.  These are managed by trusted server.
+     * @principle Allows public read access to daily words.
      */
     match /dailyWords/{dailyWordDate} {
       allow get: if true;
@@ -115,11 +120,11 @@ service cloud.firestore {
     }
 
     /**
-     * @description Manages the word list. Publicly readable, but write access is denied to all.
+     * @description Controls access to the word list documents.
      * @path /wordList/{word}
-     * @allow get, list: if true
-     * @deny create, update, delete: if false
-     * @principle Allows public read access to the word list data.
+     * @allow (get, list) Everyone can read the word list.
+     * @deny (create, update, delete) No one can modify or delete the word list through the client.  These are managed by trusted server.
+     * @principle Allows public read access to the word list.
      */
     match /wordList/{word} {
       allow get: if true;
