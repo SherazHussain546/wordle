@@ -110,7 +110,7 @@ interface GameGridProps {
 const GameGrid: FC<GameGridProps> = memo(({ guesses, currentGuess, evaluations, currentRowIndex }) => {
   return (
     <div className="flex items-center justify-center w-full my-auto">
-      <div className="grid grid-rows-6 gap-1.5 w-full max-w-[280px] sm:max-w-[300px]">
+      <div className="grid grid-rows-6 gap-1.5 w-full max-w-[280px] sm:max-w-[340px]">
         {Array.from({ length: MAX_GUESSES }).map((_, i) => (
           <Row
             key={i}
@@ -150,7 +150,7 @@ const Keyboard: FC<{ onKeyPress: (key: string) => void; keyColors: KeyColors }> 
   };
 
   return (
-    <div className="w-full flex flex-col items-center pb-1 pt-1">
+    <div className="w-full flex flex-col items-center pb-1 pt-1 max-w-[500px] mx-auto">
       {keyboardLayout.map((row, i) => (
         <div key={i} className="flex justify-center gap-1 my-0.5 w-full">
           {row.map((key) => (
@@ -158,10 +158,11 @@ const Keyboard: FC<{ onKeyPress: (key: string) => void; keyColors: KeyColors }> 
               key={key}
               onClick={() => onKeyPress(key)}
               className={cn(
-                'h-10 sm:h-12 uppercase font-bold transition-colors duration-300 text-xs sm:text-base',
-                key.length > 1 ? 'px-2 sm:px-3 flex-grow' : 'w-7 sm:w-10 flex-1',
+                'h-12 sm:h-14 uppercase font-bold transition-colors duration-300 text-xs sm:text-base flex-1',
+                key.length > 1 ? 'px-2 sm:px-3' : '',
                 getKeyClass(key)
               )}
+              style={{ flexGrow: key.length > 1 ? 1.5 : 1 }}
             >
               {key === 'del' ? <Delete size={20} /> : key}
             </Button>
@@ -197,11 +198,10 @@ const StatsModal: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode:
 });
 
 const Header: FC<{ 
-  onHardModeToggle: (checked: boolean) => void; 
   isHardMode: boolean; 
   onHint: () => void;
   hintsRemaining: number;
-}> = memo(({ onHardModeToggle, isHardMode, onHint, hintsRemaining }) => (
+}> = memo(({ isHardMode, onHint, hintsRemaining }) => (
   <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
      <div className="w-10">
        {/* Empty div for spacing */}
@@ -224,7 +224,7 @@ const Header: FC<{
             <PieChart className="h-6 w-6" />
           </Button>
         </DialogTrigger>
-        <StatsModal onHardModeToggle={onHardModeToggle} isHardMode={isHardMode} />
+        <StatsModal onHardModeToggle={() => {}} isHardMode={isHardMode} />
       </Dialog>
     </div>
   </header>
@@ -295,63 +295,69 @@ const GameFooter: FC = memo(() => (
 
 const Instructions: FC = memo(() => (
     <div className="w-full text-left p-4 sm:p-6 bg-card rounded-lg my-4 border">
-        <h2 id="how-to-play" className="text-xl font-bold mb-4 text-center scroll-mt-20">How To Play</h2>
-        <p className="text-muted-foreground mb-4 text-center">Guess the Wordle in 6 tries.</p>
-        <ul className="space-y-3 mb-6 text-foreground">
-            <li>Each guess must be a valid 5-letter word.</li>
-            <li>The color of the tiles will change to show how close your guess was to the word.</li>
-        </ul>
+        <div className="grid md:grid-cols-2 gap-x-8">
+            <div>
+                <h2 id="how-to-play" className="text-xl font-bold mb-4 text-center scroll-mt-20">How To Play</h2>
+                <p className="text-muted-foreground mb-4 text-center">Guess the Wordle in 6 tries.</p>
+                <ul className="space-y-3 mb-6 text-foreground">
+                    <li>Each guess must be a valid 5-letter word.</li>
+                    <li>The color of the tiles will change to show how close your guess was to the word.</li>
+                </ul>
 
-        <h3 className="font-semibold mb-4 border-t pt-4">Examples</h3>
-        <div className="space-y-4">
-            <div className="flex items-center gap-4">
-                <div className="flex gap-1">
-                    {'WEARY'.split('').map((letter, i) => (
-                        <div key={i} className={`w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg ${i === 0 ? 'bg-primary text-primary-foreground border-2 border-primary' : 'bg-transparent border-2 border-border'}`}>{letter}</div>
-                    ))}
+                <h3 className="font-semibold mb-4 border-t pt-4">Examples</h3>
+                <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                        <div className="flex gap-1">
+                            {'WEARY'.split('').map((letter, i) => (
+                                <div key={i} className={`w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg ${i === 0 ? 'bg-primary text-primary-foreground border-2 border-primary' : 'bg-transparent border-2 border-border'}`}>{letter}</div>
+                            ))}
+                        </div>
+                        <p className="text-sm flex-1"><strong className="font-semibold">W</strong> is in the word and in the correct spot.</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="flex gap-1">
+                            {'PILLS'.split('').map((letter, i) => (
+                                <div key={i} className={`w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg ${i === 1 ? 'bg-accent text-accent-foreground border-2 border-accent' : 'bg-transparent border-2 border-border'}`}>{letter}</div>
+                            ))}
+                        </div>
+                        <p className="text-sm flex-1"><strong className="font-semibold">I</strong> is in the word but in the wrong spot.</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="flex gap-1">
+                            {'VAGUE'.split('').map((letter, i) => (
+                                <div key={i} className={`w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg ${i === 3 ? 'bg-muted-foreground/80 text-white border-2 border-muted-foreground/80' : 'bg-transparent border-2 border-border'}`}>{letter}</div>
+                            ))}
+                        </div>
+                        <p className="text-sm flex-1"><strong className="font-semibold">U</strong> is not in the word in any spot.</p>
+                    </div>
                 </div>
-                <p className="text-sm flex-1"><strong className="font-semibold">W</strong> is in the word and in the correct spot.</p>
             </div>
-            <div className="flex items-center gap-4">
-                <div className="flex gap-1">
-                    {'PILLS'.split('').map((letter, i) => (
-                        <div key={i} className={`w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg ${i === 1 ? 'bg-accent text-accent-foreground border-2 border-accent' : 'bg-transparent border-2 border-border'}`}>{letter}</div>
-                    ))}
-                </div>
-                <p className="text-sm flex-1"><strong className="font-semibold">I</strong> is in the word but in the wrong spot.</p>
-            </div>
-            <div className="flex items-center gap-4">
-                <div className="flex gap-1">
-                    {'VAGUE'.split('').map((letter, i) => (
-                        <div key={i} className={`w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg ${i === 3 ? 'bg-muted-foreground/80 text-white border-2 border-muted-foreground/80' : 'bg-transparent border-2 border-border'}`}>{letter}</div>
-                    ))}
-                </div>
-                <p className="text-sm flex-1"><strong className="font-semibold">U</strong> is not in the word in any spot.</p>
-            </div>
-        </div>
 
-        <h2 id="tips-and-tricks" className="text-xl font-bold mt-8 mb-4 text-center border-t pt-6 scroll-mt-20">Tips &amp; Tricks</h2>
-        <div className="space-y-4 text-sm text-foreground">
-            <div className="p-4 rounded-lg border bg-background">
-                <h4 className="font-semibold mb-2">Start with a word that has a lot of vowels.</h4>
-                <p className="text-muted-foreground">Words like "ADIEU," "AUDIO," or "CANOE" are great choices because they help you quickly determine which vowels are in the daily word.</p>
-            </div>
-            <div className="p-4 rounded-lg border bg-background">
-                <h4 className="font-semibold mb-2">Use two very different words for your first two guesses.</h4>
-                <p className="text-muted-foreground">After your first guess, try a second word with completely different letters. For example, if you start with "AUDIO," a good second guess could be "SLYNT." This strategy helps eliminate or confirm up to 10 different letters right away.</p>
-            </div>
-            <div className="p-4 rounded-lg border bg-background">
-                <h4 className="font-semibold mb-2">Watch out for duplicate letters.</h4>
-                <p className="text-muted-foreground">Remember that a letter can appear more than once. Words like "SPOON" or "KNOLL" can be tricky, so if you're stuck, consider the possibility of a repeated letter.</p>
-            </div>
-            <div className="p-4 rounded-lg border bg-background">
-                <h4 className="font-semibold mb-2">Try "Hard Mode" for an extra challenge.</h4>
-                <p className="text-muted-foreground">In Hard Mode, you must use any revealed hints in subsequent guesses. This can be more difficult, but it forces you to think more strategically and can lead to solving the puzzle faster. You can enable it in the Settings.</p>
+            <div>
+                <h2 id="tips-and-tricks" className="text-xl font-bold mt-8 md:mt-0 mb-4 text-center border-t md:border-t-0 pt-6 md:pt-0 scroll-mt-20">Tips &amp; Tricks</h2>
+                <div className="space-y-4 text-sm text-foreground">
+                    <div className="p-4 rounded-lg border bg-background">
+                        <h4 className="font-semibold mb-2">Start with a word that has a lot of vowels.</h4>
+                        <p className="text-muted-foreground">Words like "ADIEU," "AUDIO," or "CANOE" are great choices because they help you quickly determine which vowels are in the daily word.</p>
+                    </div>
+                    <div className="p-4 rounded-lg border bg-background">
+                        <h4 className="font-semibold mb-2">Use two very different words for your first two guesses.</h4>
+                        <p className="text-muted-foreground">After your first guess, try a second word with completely different letters. For example, if you start with "AUDIO," a good second guess could be "SLYNT." This strategy helps eliminate or confirm up to 10 different letters right away.</p>
+                    </div>
+                    <div className="p-4 rounded-lg border bg-background">
+                        <h4 className="font-semibold mb-2">Watch out for duplicate letters.</h4>
+                        <p className="text-muted-foreground">Remember that a letter can appear more than once. Words like "SPOON" or "KNOLL" can be tricky, so if you're stuck, consider the possibility of a repeated letter.</p>
+                    </div>
+                    <div className="p-4 rounded-lg border bg-background">
+                        <h4 className="font-semibold mb-2">Try "Hard Mode" for an extra challenge.</h4>
+                        <p className="text-muted-foreground">In Hard Mode, you must use any revealed hints in subsequent guesses. This can be more difficult, but it forces you to think more strategically and can lead to solving the puzzle faster. You can enable it in the Settings.</p>
+                    </div>
+                </div>
             </div>
         </div>
         
         <h2 id="glossary" className="text-xl font-bold mt-8 mb-4 text-center border-t pt-6 scroll-mt-20">Glossary</h2>
-        <div className="space-y-4 text-sm text-foreground">
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm text-foreground">
             <div className="p-4 rounded-lg border bg-background">
                 <h4 className="font-semibold mb-2">Ace</h4>
                 <p className="text-muted-foreground">A solve on the first guess.</p>
@@ -371,6 +377,10 @@ const Instructions: FC = memo(() => (
              <div className="p-4 rounded-lg border bg-background">
                 <h4 className="font-semibold mb-2">Whomp</h4>
                 <p className="text-muted-foreground">A guess that you know cannot be the answer, played for the sake of findi'more letters.</p>
+            </div>
+             <div className="p-4 rounded-lg border bg-background">
+                <h4 className="font-semibold mb-2">Hard mode</h4>
+                <p className="text-muted-foreground">An optional mode in which all found letters must be used in later tries.</p>
             </div>
         </div>
 
@@ -648,7 +658,7 @@ export default function WordleGame() {
   }
 
   return (
-    <div className="w-full max-w-md mx-auto flex flex-col h-full bg-background">
+    <div className="w-full max-w-5xl mx-auto flex flex-col h-full bg-background">
       <Header onHardModeToggle={handleHardModeToggle} isHardMode={isHardMode} onHint={handleHint} hintsRemaining={MAX_HINTS - hintsUsed} />
       <div className="w-full flex-grow flex flex-col px-2">
         <GameGrid guesses={guesses} currentGuess={currentGuess} evaluations={evaluations} currentRowIndex={currentRowIndex} />
