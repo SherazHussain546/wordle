@@ -56,15 +56,6 @@ const getWordDateString = (date: Date) => {
 
 // --- SUB-COMPONENTS ---
 
-const AdBanner: FC<{ position: 'top' | 'bottom' }> = ({ position }) => (
-  <div className={cn("flex items-center justify-center h-16 w-full text-sm text-muted-foreground my-2", position === 'top' ? 'mb-4' : 'mt-4')}>
-    {/* AdSense Banner Code would be placed here */}
-    <div className="w-full h-full border border-dashed rounded-lg flex items-center justify-center bg-muted/50">
-        Ad Banner ({position})
-    </div>
-  </div>
-);
-
 interface TileProps {
   letter: string;
   state: LetterState;
@@ -79,8 +70,8 @@ const Tile: FC<TileProps> = memo(({ letter, state, isRevealing, isCompleted, ind
     };
 
     const stateClasses = {
-      correct: 'bg-green-500 border-green-500 text-white',
-      present: 'bg-yellow-500 border-yellow-500 text-white',
+      correct: 'bg-primary border-primary text-primary-foreground',
+      present: 'bg-accent border-accent text-accent-foreground',
       absent: 'bg-muted-foreground/80 border-muted-foreground/80 text-white',
       empty: 'bg-transparent border-border',
       tbd: 'bg-transparent border-border text-foreground',
@@ -136,7 +127,7 @@ interface GameGridProps {
 const GameGrid: FC<GameGridProps> = memo(({ guesses, currentGuess, evaluations, currentRowIndex }) => {
     return (
         <div className="flex-grow flex items-center justify-center w-full">
-            <div className="grid grid-rows-6 gap-1.5 w-full max-w-[350px] sm:max-w-[400px]">
+            <div className="grid grid-rows-6 gap-1.5 w-full max-w-[350px]">
                 {Array.from({ length: MAX_GUESSES }).map((_, i) => (
                     <Row
                         key={i}
@@ -164,8 +155,8 @@ const Keyboard: FC<{ onKeyPress: (key: string) => void, keyColors: KeyColors }> 
     const getKeyClass = (key: string) => {
         const state = keyColors[key];
         switch (state) {
-            case 'correct': return 'bg-green-500 text-white hover:bg-green-600';
-            case 'present': return 'bg-yellow-500 text-white hover:bg-yellow-600';
+            case 'correct': return 'bg-primary text-primary-foreground hover:bg-primary/90';
+            case 'present': return 'bg-accent text-accent-foreground hover:bg-accent/90';
             case 'absent': return 'bg-muted-foreground/80 text-white hover:bg-muted-foreground';
             default: return 'bg-muted hover:bg-muted/80';
         }
@@ -174,7 +165,7 @@ const Keyboard: FC<{ onKeyPress: (key: string) => void, keyColors: KeyColors }> 
     return (
         <div className="w-full flex flex-col items-center pb-2">
             {keyboardLayout.map((row, i) => (
-                <div key={i} className="flex justify-center gap-1.5 my-1 w-full">
+                <div key={i} className="flex justify-center gap-1 my-0.5 w-full">
                     {row.map((key) => (
                         <Button
                             key={key}
@@ -477,7 +468,7 @@ export default function WordleGame() {
         } else if (key === 'del' || key === 'backspace') {
             setCurrentGuess(prev => prev.slice(0, -1));
         } else if (currentGuess.length < WORD_LENGTH && /^[a-zA-Z]$/.test(key)) {
-            setCurrentGuess(prev => prev + key.toUpperCase());
+            setCurrentGuess(prev => prev.toUpperCase());
         }
     }, [status, currentGuess.length, processGuess]);
 
@@ -488,17 +479,15 @@ export default function WordleGame() {
     }, [onKeyPress]);
 
     return (
-        <div className="w-full max-w-md mx-auto flex flex-col h-[calc(100vh-1rem)] sm:h-screen sm:py-2">
+        <div className="w-full max-w-md mx-auto flex flex-col h-full sm:h-screen">
             <Header stats={stats} />
-            <div className="w-full flex-grow flex flex-col px-2">
-                <AdBanner position="top" />
+            <div className="w-full flex-grow flex flex-col px-2 pt-2 pb-1">
                 <GameGrid
                     guesses={guesses}
                     currentGuess={currentGuess}
                     evaluations={evaluations}
                     currentRowIndex={currentRowIndex}
                 />
-                <AdBanner position="bottom" />
             </div>
             <Keyboard onKeyPress={onKeyPress} keyColors={keyColors} />
         </div>
@@ -524,9 +513,11 @@ const GlobalStyles = () => (
       animation-duration: 0.6s;
       animation-timing-function: ease-in-out;
     }
+    html, body, #__next {
+      height: 100%;
+    }
   `}</style>
 );
 // In a real app, this would be in globals.css or tailwind.config.js
 // Since it's self-contained, we can call this component once.
 (WordleGame as any).GlobalStyles = GlobalStyles;
-

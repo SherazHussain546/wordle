@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    --background: 300 43% 96%; /* #f8f2fa - Light Purple */
+    --background: 47 33% 94%; /* #f3f0ec - Off-white, like parchment */
     --foreground: 240 10% 3.9%;
-    --card: 300 43% 99%;
+    --card: 47 33% 98%;
     --card-foreground: 240 10% 3.9%;
-    --popover: 300 43% 99%;
+    --popover: 47 33% 98%;
     --popover-foreground: 240 10% 3.9%;
-    --primary: 289 68% 42%; /* #9c27b0 - Strong Purple */
+    --primary: 142 68% 32%; /* #27824c - Forest Green */
     --primary-foreground: 0 0% 98%;
-    --secondary: 300 20% 92%;
+    --secondary: 47 20% 92%;
     --secondary-foreground: 240 10% 3.9%;
-    --muted: 300 20% 92%;
+    --muted: 47 20% 92%;
     --muted-foreground: 0 0% 45.1%;
-    --accent: 231 48% 48%; /* #3f51b5 - Deep Indigo */
+    --accent: 25 80% 50%; /* #e67e22 - Carrot Orange */
     --accent-foreground: 0 0% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 300 10% 88%;
-    --input: 300 10% 88%;
-    --ring: 289 68% 42%;
+    --border: 142 10% 80%;
+    --input: 142 10% 80%;
+    --ring: 142 68% 32%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;
@@ -32,25 +32,25 @@
   }
  
   .dark {
-    --background: 289 15% 10%; /* Dark Purple */
+    --background: 142 15% 10%; /* Dark Forest Green */
     --foreground: 0 0% 98%;
-    --card: 289 15% 10%;
+    --card: 142 15% 10%;
     --card-foreground: 0 0% 98%;
-    --popover: 289 15% 10%;
+    --popover: 142 15% 10%;
     --popover-foreground: 0 0% 98%;
-    --primary: 289 68% 60%; /* Brighter Purple */
-    --primary-foreground: 289 68% 10%;
-    --secondary: 289 15% 18%;
+    --primary: 142 68% 50%; /* Brighter Forest Green */
+    --primary-foreground: 142 68% 10%;
+    --secondary: 142 15% 18%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 289 15% 18%;
+    --muted: 142 15% 18%;
     --muted-foreground: 0 0% 63.9%;
-    --accent: 231 48% 65%; /* Brighter Indigo */
-    --accent-foreground: 231 48% 10%;
+    --accent: 25 80% 65%; /* Brighter Carrot Orange */
+    --accent-foreground: 25 80% 10%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 289 15% 18%;
-    --input: 289 15% 18%;
-    --ring: 289 68% 60%;
+    --border: 142 15% 18%;
+    --input: 142 15% 18%;
+    --ring: 142 68% 50%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;

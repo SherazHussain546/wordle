@@ -12,7 +12,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="flex min-h-screen w-full flex-col items-center justify-start bg-background">
+    <main className="flex h-full w-full flex-col items-center justify-start bg-background">
       {isClient ? <WordleGame /> : <LoadingSkeleton />}
     </main>
   );
@@ -20,7 +20,7 @@ export default function Home() {
 
 function LoadingSkeleton() {
   return (
-    <div className="w-full max-w-md mx-auto flex flex-col h-[calc(100vh-1rem)] sm:h-[calc(100vh-4rem)] py-2">
+    <div className="w-full max-w-md mx-auto flex flex-col h-full py-2">
       <div className="flex justify-between items-center p-2">
         <Skeleton className="h-8 w-8 rounded-md" />
         <Skeleton className="h-8 w-40 rounded-md" />
