@@ -106,7 +106,7 @@ interface GameGridProps {
 const GameGrid: FC<GameGridProps> = memo(({ guesses, currentGuess, evaluations, currentRowIndex }) => {
   return (
     <div className="flex items-center justify-center w-full my-auto">
-      <div className="grid grid-rows-6 gap-1.5 w-full max-w-[320px] sm:max-w-[350px]">
+      <div className="grid grid-rows-6 gap-1.5 w-full max-w-[300px] sm:max-w-[320px]">
         {Array.from({ length: MAX_GUESSES }).map((_, i) => (
           <Row
             key={i}
@@ -376,22 +376,29 @@ export default function WordleGame() {
 
     const upperCaseGuess = currentGuess.toUpperCase();
 
-    if (!validWords.has(upperCaseGuess)) {
+    let isValidWord = validWords.has(upperCaseGuess);
+
+    if (!isValidWord) {
       setIsVerifying(true);
       try {
         const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${upperCaseGuess}`);
-        if (!response.ok) {
-          toast({ title: 'Not in word list', variant: 'destructive', duration: 1000 });
-          return;
+        if (response.ok) {
+          isValidWord = true;
+          // If the word is valid, add it to our session's word list for faster checks next time
+          setValidWords(prev => new Set(prev).add(upperCaseGuess));
         }
-        // If the word is valid, add it to our session's word list
-        setValidWords(prev => new Set(prev).add(upperCaseGuess));
       } catch (error) {
         toast({ title: 'Could not verify word', description: 'Please check your connection.', variant: 'destructive' });
+        setIsVerifying(false);
         return;
       } finally {
         setIsVerifying(false);
       }
+    }
+
+    if (!isValidWord) {
+      toast({ title: 'Not in word list', variant: 'destructive', duration: 1000 });
+      return;
     }
     
     const newGuesses = [...guesses, upperCaseGuess];
