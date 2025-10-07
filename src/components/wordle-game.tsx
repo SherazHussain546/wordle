@@ -196,7 +196,7 @@ const StatsModal: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode:
 });
 
 const Header: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode: boolean; }> = memo(({ onHardModeToggle, isHardMode }) => (
-  <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
+    <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
     <div className="w-10"></div>
     <div className="flex items-center gap-2">
       <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase">
@@ -333,6 +333,31 @@ const Instructions: FC = memo(() => (
                 <p className="text-muted-foreground">In Hard Mode, you must use any revealed hints in subsequent guesses. This can be more difficult, but it forces you to think more strategically and can lead to solving the puzzle faster. You can enable it in the Settings.</p>
             </div>
         </div>
+        
+        <h2 className="text-xl font-bold mt-8 mb-4 text-center border-t pt-6">Glossary</h2>
+        <div className="space-y-4 text-sm text-foreground">
+            <div className="p-4 rounded-lg border bg-background">
+                <h4 className="font-semibold mb-2">Ace</h4>
+                <p className="text-muted-foreground">A solve on the first guess.</p>
+            </div>
+            <div className="p-4 rounded-lg border bg-background">
+                <h4 className="font-semibold mb-2">Deuce / Twofer</h4>
+                <p className="text-muted-foreground">A solve in two tries.</p>
+            </div>
+            <div className="p-4 rounded-lg border bg-background">
+                <h4 className="font-semibold mb-2">Phew</h4>
+                <p className="text-muted-foreground">A solve in six tries, narrowly avoiding a loss.</p>
+            </div>
+            <div className="p-4 rounded-lg border bg-background">
+                <h4 className="font-semibold mb-2">Trap</h4>
+                <p className="text-muted-foreground">A letter pattern that points to many words, such as _IGHT.</p>
+            </div>
+             <div className="p-4 rounded-lg border bg-background">
+                <h4 className="font-semibold mb-2">Whomp</h4>
+                <p className="text-muted-foreground">A guess that you know cannot be the answer, played for the sake of finding more letters.</p>
+            </div>
+        </div>
+
     </div>
 ));
 
