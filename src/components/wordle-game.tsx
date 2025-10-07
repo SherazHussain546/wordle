@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, FC, memo } from 'react';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,6 +19,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import AdBanner from './ad-banner';
 import Logo from './logo';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { WordleArticle } from './wordle-article';
 
 // --- CONSTANTS ---
 const MAX_GUESSES = 6;
@@ -682,6 +683,18 @@ export default function WordleGame() {
       </div>
       <div className="px-2 pb-4">
         <Instructions />
+         <div className="px-2 pb-4">
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="item-1">
+              <AccordionTrigger className="text-xl font-bold hover:no-underline">
+                The Ultimate Guide to Wordle: From Novice to Grandmaster
+              </AccordionTrigger>
+              <AccordionContent>
+                <WordleArticle />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </div>
       </div>
        <div className="py-8 bg-[#1a1a1a]">
         <a href="https://synctech.ie/gamehub" target="_blank" rel="noopener noreferrer">
