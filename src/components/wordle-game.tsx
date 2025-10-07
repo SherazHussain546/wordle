@@ -14,7 +14,6 @@ import {
 } from '@/components/ui/dialog';
 import { PieChart, Delete, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getDefinition, WordDefinitionOutput } from '@/ai/flows/dictionary-flow';
 import { WORDLIST } from '@/lib/words';
 
 // --- CONSTANTS ---
@@ -257,6 +256,13 @@ export default function WordleGame() {
   const [currentGuess, setCurrentGuess] = useState('');
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [keyColors, setKeyColors] = useState<KeyColors>({});
+  
+  // This state is to ensure the component is mounted on the client
+  // before we try to select a word. This prevents hydration mismatches.
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const currentRowIndex = useMemo(() => guesses.length, [guesses]);
 
@@ -272,8 +278,10 @@ export default function WordleGame() {
   }, []);
 
   useEffect(() => {
-    startNewGame();
-  }, [startNewGame]);
+    if(isClient) {
+      startNewGame();
+    }
+  }, [isClient, startNewGame]);
 
   const handleGameOver = useCallback(
     async (finalStatus: 'won' | 'lost') => {
@@ -281,8 +289,13 @@ export default function WordleGame() {
       setIsGameOver(true);
       setIsDefinitionLoading(true);
       try {
-        const result: WordDefinitionOutput = await getDefinition({ word: dailyWord });
-        setDefinition(result.definition);
+        const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${dailyWord}`);
+        if (!response.ok) {
+          throw new Error('Word not found in dictionary.');
+        }
+        const data = await response.json();
+        const firstDefinition = data[0]?.meanings[0]?.definitions[0]?.definition;
+        setDefinition(firstDefinition || 'No definition found.');
       } catch (error) {
         console.error('Failed to get definition:', error);
         setDefinition('Could not load definition.');
@@ -392,7 +405,7 @@ export default function WordleGame() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onKeyPress]);
 
-  if (!dailyWord) {
+  if (!dailyWord || !isClient) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
