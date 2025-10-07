@@ -15,9 +15,6 @@ import {
 import { PieChart, Delete, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WORDLIST } from '@/lib/words';
-import { validateWord } from '@/ai/flows/validate-word-flow';
-import { useAuth, useFirebase, useUser } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
 
 // --- CONSTANTS ---
 const MAX_GUESSES = 6;
@@ -249,9 +246,6 @@ const GameOverDialog: FC<GameOverDialogProps> = ({
 // --- MAIN GAME COMPONENT ---
 export default function WordleGame() {
   const { toast } = useToast();
-  const { firestore } = useFirebase();
-  const { user } = useUser();
-  const auth = useAuth();
   
   const [dailyWord, setDailyWord] = useState('');
   const [isGameOver, setIsGameOver] = useState(false);
@@ -367,29 +361,8 @@ export default function WordleGame() {
     const upperCaseGuess = currentGuess.toUpperCase();
 
     if (!validWords.has(upperCaseGuess)) {
-      setIsVerifying(true);
-      try {
-        const isValid = await validateWord(upperCaseGuess);
-        if (isValid) {
-          // Add to firestore and local set
-          if (firestore) {
-            const wordRef = doc(firestore, 'wordList', upperCaseGuess);
-            await setDoc(wordRef, { isValidGuess: true });
-          }
-          setValidWords(prev => new Set(prev).add(upperCaseGuess));
-        } else {
-          toast({ title: 'Not in word list', variant: 'destructive', duration: 1000 });
-          setIsVerifying(false);
-          return;
-        }
-      } catch (e) {
-        console.error("Error validating word:", e);
-        toast({ title: 'Could not verify word', variant: 'destructive', duration: 2000 });
-        setIsVerifying(false);
-        return;
-      } finally {
-        setIsVerifying(false);
-      }
+      toast({ title: 'Not in word list', variant: 'destructive', duration: 1000 });
+      return;
     }
 
     const newGuesses = [...guesses, upperCaseGuess];
@@ -409,7 +382,7 @@ export default function WordleGame() {
         handleGameOver(isWin ? 'won' : 'lost');
       }, FLIP_ANIMATION_DURATION + WORD_LENGTH * 100);
     }
-  }, [currentGuess, dailyWord, guesses, evaluations, toast, handleGameOver, validWords, firestore]);
+  }, [currentGuess, dailyWord, guesses, evaluations, toast, handleGameOver, validWords]);
 
   const onKeyPress = useCallback(
     (key: string) => {
