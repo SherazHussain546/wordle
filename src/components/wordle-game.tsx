@@ -282,13 +282,13 @@ const GameOverDialog: FC<GameOverDialogProps> = ({
 
 const GameFooter: FC = memo(() => (
   <footer className="w-full text-center p-4">
-    <p className="text-sm text-muted-foreground">
+    <p className="text-sm text-muted-foreground font-bold">
       Powered by{' '}
       <a
         href="https://synctech.ie"
         target="_blank"
         rel="noopener noreferrer"
-        className="font-medium text-primary hover:underline underline-offset-4"
+        className="font-bold text-primary hover:underline underline-offset-4"
       >
         SYNC TECH
       </a>
