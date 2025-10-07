@@ -1,7 +1,7 @@
 'use server';
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit/zod';
+import { z } from 'zod';
 
 const ValidateWordInputSchema = z.string().length(5).describe('A 5-letter word to validate.');
 const ValidateWordOutputSchema = z.boolean().describe('Whether the word is a valid English word.');
