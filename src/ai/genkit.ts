@@ -5,6 +5,7 @@ import { GoogleAuth } from 'google-auth-library';
 export const ai = genkit({
   plugins: [
     googleAI({
+      apiVersion: 'v1',
       auth: new GoogleAuth({
         scopes: 'https://www.googleapis.com/auth/cloud-platform',
       }),
