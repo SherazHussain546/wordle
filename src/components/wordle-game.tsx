@@ -197,15 +197,13 @@ const StatsModal: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode:
 });
 
 const Header: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode: boolean; }> = memo(({ onHardModeToggle, isHardMode }) => (
-    <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
+  <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
     <div className="w-10">
       {/* Empty div for spacing */}
     </div>
-    <div className="flex items-center gap-2">
-      <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase">
-        Wordle<span className="text-primary">Master</span>
-      </h1>
-    </div>
+    <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase">
+      Wordle<span className="text-primary">Master</span>
+    </h1>
     <div className="flex items-center gap-1">
       <Button variant="ghost" size="icon">
         <Lightbulb className="h-6 w-6" />
@@ -221,7 +219,7 @@ const Header: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode: boo
             How to Play
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => document.getElementById('tips-and-tricks')?.scrollIntoView({ behavior: 'smooth' })}>
-            Tips & Tricks
+            Tips &amp; Tricks
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => document.getElementById('glossary')?.scrollIntoView({ behavior: 'smooth' })}>
             Glossary
