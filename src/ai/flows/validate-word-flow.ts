@@ -14,6 +14,7 @@ const prompt = ai.definePrompt({
   name: 'validateWordPrompt',
   input: { schema: ValidateWordInputSchema },
   output: { schema: ValidateWordOutputSchema },
+  model: 'gemini-pro',
   prompt: `You are an English dictionary expert. Your task is to determine if a given 5-letter string is a real, common English word.
   
   Do not consider proper nouns, abbreviations, or slang unless they are extremely common in everyday English.
