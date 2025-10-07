@@ -215,13 +215,22 @@ const Header: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode: boo
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem onSelect={() => document.getElementById('how-to-play')?.scrollIntoView({ behavior: 'smooth' })}>
+          <DropdownMenuItem onSelect={(e) => {
+            e.preventDefault();
+            document.getElementById('how-to-play')?.scrollIntoView({ behavior: 'smooth' });
+          }}>
             How to Play
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => document.getElementById('tips-and-tricks')?.scrollIntoView({ behavior: 'smooth' })}>
+          <DropdownMenuItem onSelect={(e) => {
+            e.preventDefault();
+            document.getElementById('tips-and-tricks')?.scrollIntoView({ behavior: 'smooth' });
+          }}>
             Tips & Tricks
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => document.getElementById('glossary')?.scrollIntoView({ behavior: 'smooth' })}>
+          <DropdownMenuItem onSelect={(e) => {
+            e.preventDefault();
+            document.getElementById('glossary')?.scrollIntoView({ behavior: 'smooth' });
+          }}>
             Glossary
           </DropdownMenuItem>
         </DropdownMenuContent>
