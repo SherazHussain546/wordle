@@ -294,8 +294,10 @@ export default function WordleGame() {
   }, [firestore, toast]);
 
   useEffect(() => {
-    fetchDailyWord();
-  }, [fetchDailyWord]);
+    if (firestore) {
+      fetchDailyWord();
+    }
+  }, [firestore, fetchDailyWord]);
 
   const resetGame = useCallback(() => {
     setIsGameOver(false);
