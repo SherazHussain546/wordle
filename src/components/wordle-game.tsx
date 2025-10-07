@@ -207,24 +207,6 @@ const Header: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode: boo
       <Button variant="ghost" size="icon">
         <Lightbulb className="h-6 w-6" />
       </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <HelpCircle className="h-6 w-6" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem>
-            <a href="#how-to-play">How to Play</a>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <a href="#tips-and-tricks">Tips & Tricks</a>
-          </DropdownMenuItem>
-          <DropdownMenuItem>
-            <a href="#glossary">Glossary</a>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
       <Dialog>
         <DialogTrigger asChild>
           <Button variant="ghost" size="icon">
