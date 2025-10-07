@@ -5,8 +5,33 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: 'Daily Word Master',
-  description: 'A daily word guessing game.',
+  metadataBase: new URL('https://daily-word-master.com'), // Replace with your actual domain
+  title: {
+    default: 'WordleMaster - Free Online Daily Word Puzzle Game',
+    template: `%s | WordleMaster`,
+  },
+  description: 'Challenge your vocabulary with WordleMaster, a free daily word guessing game. Guess the hidden 5-letter word in 6 tries. New puzzle every day. Play now!',
+  keywords: ['wordle', 'word game', 'puzzle game', 'daily puzzle', 'vocabulary game', 'online game', 'free game', 'word master', 'guess the word', '5 letter word'],
+  openGraph: {
+    title: 'WordleMaster - Free Online Daily Word Puzzle Game',
+    description: 'Challenge your vocabulary with a new 5-letter word puzzle every day. Can you guess it in 6 tries?',
+    type: 'website',
+    url: '/', // Replace with your actual domain if different
+    images: [
+      {
+        url: '/gamingSYNC.png', // Assuming gamingSYNC.png is in the public folder
+        width: 512,
+        height: 512,
+        alt: 'WordleMaster Logo',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'WordleMaster - Free Online Daily Word Puzzle Game',
+    description: 'A new 5-letter word puzzle every day. Play for free!',
+    images: ['/gamingSYNC.png'], // Assuming gamingSYNC.png is in the public folder
+  },
 };
 
 export default function RootLayout({
