@@ -14,12 +14,12 @@ export const metadata: Metadata = {
   keywords: ['wordle', 'word game', 'puzzle game', 'daily puzzle', 'vocabulary game', 'online game', 'free game', 'word master', 'guess the word', '5 letter word'],
   openGraph: {
     title: 'WordleMaster - Free Online Daily Word Puzzle Game',
-    description: 'Challenge your vocabulary with a new 5-letter word puzzle every day. Can you guess it in 6 tries?',
+    description: 'A new 5-letter word puzzle every day. Play for free!',
     type: 'website',
-    url: '/', // Replace with your actual domain if different
+    url: '/',
     images: [
       {
-        url: '/gamingSYNC.png', // Assuming gamingSYNC.png is in the public folder
+        url: '/gamingSYNC.png',
         width: 512,
         height: 512,
         alt: 'WordleMaster Logo',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'WordleMaster - Free Online Daily Word Puzzle Game',
     description: 'A new 5-letter word puzzle every day. Play for free!',
-    images: ['/gamingSYNC.png'], // Assuming gamingSYNC.png is in the public folder
+    images: ['/gamingSYNC.png'],
   },
 };
 
