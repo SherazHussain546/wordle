@@ -199,7 +199,7 @@ const StatsModal: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode:
 const Header: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode: boolean; }> = memo(({ onHardModeToggle, isHardMode }) => (
     <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
     <div className="w-10">
-       <Image src="/gamingSYNC.png" alt="WordleMaster Logo" width={40} height={40} />
+      {/* Empty div for spacing */}
     </div>
     <div className="flex items-center gap-2">
       <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase">
@@ -380,7 +380,7 @@ const Instructions: FC = memo(() => (
             </div>
              <div className="p-4 rounded-lg border bg-background">
                 <h4 className="font-semibold mb-2">Whomp</h4>
-                <p className="text-muted-foreground">A guess that you know cannot be the answer, played for the sake of finding more letters.</p>
+                <p className="text-muted-foreground">A guess that you know cannot be the answer, played for the sake of findi'more letters.</p>
             </div>
         </div>
 
