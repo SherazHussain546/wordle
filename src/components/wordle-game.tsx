@@ -1,15 +1,16 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, FC, memo } from 'react';
-import { initializeApp, type FirebaseOptions } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
-import { getAuth, signInAnonymously, onAuthStateChanged, type User } from 'firebase/auth';
-import { WORDLIST, VALID_GUESSES } from '@/lib/words';
+import { doc, getDoc, setDoc, runTransaction, getFirestore, collection, writeBatch, query, where, limit } from 'firebase/firestore';
+import { type User } from 'firebase/auth';
+import { WORDLIST as FALLBACK_WORDLIST, VALID_GUESSES as FALLBACK_VALID_GUESSES } from '@/lib/words';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { BarChart, Trophy, TrendingUp, Repeat, Delete, PieChart } from 'lucide-react';
+import { PieChart, Delete } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { useFirebase, useUser } from '@/firebase';
+import { setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 // --- CONSTANTS ---
 const MAX_GUESSES = 6;
@@ -41,13 +42,6 @@ type PlayerStats = {
 const getUTCDate = () => {
   const d = new Date();
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-};
-
-const getDailyWord = () => {
-  const startDate = new Date('2024-01-01T00:00:00.000Z');
-  const today = getUTCDate();
-  const dayIndex = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-  return WORDLIST[dayIndex % WORDLIST.length].toUpperCase();
 };
 
 const getWordDateString = (date: Date) => {
@@ -255,10 +249,13 @@ const Header: FC<{ stats: PlayerStats | null }> = memo(({ stats }) => (
 // --- MAIN GAME COMPONENT ---
 export default function WordleGame() {
     const { toast } = useToast();
-    const [dailyWord] = useState(getDailyWord());
-    const [wordDate] = useState(getWordDateString(getUTCDate()));
+    const { firestore } = useFirebase();
+    const { user, isUserLoading } = useUser();
+    
+    const [dailyWord, setDailyWord] = useState('');
+    const [validGuesses, setValidGuesses] = useState(new Set<string>());
+    const [wordDate, setWordDate] = useState(getWordDateString(getUTCDate()));
 
-    const [user, setUser] = useState<User | null>(null);
     const [status, setStatus] = useState<GameStatus>('loading');
     const [guesses, setGuesses] = useState<string[]>([]);
     const [currentGuess, setCurrentGuess] = useState('');
@@ -268,40 +265,50 @@ export default function WordleGame() {
 
     const currentRowIndex = useMemo(() => guesses.length, [guesses]);
 
-    // --- FIREBASE INITIALIZATION & AUTH ---
+     // --- DATA LOADING & SAVING ---
     useEffect(() => {
-        try {
-            // @ts-ignore
-            const firebaseConfig = window.__firebase_config as FirebaseOptions;
-            if (!firebaseConfig || !firebaseConfig.apiKey || firebaseConfig.apiKey.includes("YOUR_")) {
-                console.warn("Firebase config not found or is a placeholder. Game state will not be saved.");
-                setStatus('playing'); // Allow playing without persistence
-                return;
+        if (isUserLoading) return;
+
+        const db = firestore;
+
+        const getDailyWord = async () => {
+            const today = getWordDateString(getUTCDate());
+            setWordDate(today);
+
+            const dailyWordRef = doc(db, 'dailyWords', today);
+            const dailyWordSnap = await getDoc(dailyWordRef);
+
+            if (dailyWordSnap.exists()) {
+                setDailyWord(dailyWordSnap.data().word.toUpperCase());
+            } else {
+                // Fallback or generate new word
+                console.warn("No daily word found in Firestore for today. Using fallback.");
+                const fallbackIndex = Math.floor(Math.random() * FALLBACK_WORDLIST.length);
+                const fallbackWord = FALLBACK_WORDLIST[fallbackIndex].toUpperCase();
+                setDailyWord(fallbackWord);
+                // Optionally, save this new word to Firestore
+                setDocumentNonBlocking(dailyWordRef, { word: fallbackWord, date: today }, { merge: true });
             }
+        };
 
-            const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
+        const loadValidGuesses = async () => {
+             // For now, using fallback. In a real app, you might fetch this from Firestore
+             // or a different source if it's very large.
+             setValidGuesses(FALLBACK_VALID_GUESSES);
+        };
 
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    setUser(user);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            });
-        } catch (error) {
-            console.error("Firebase initialization failed:", error);
-            setStatus('playing');
-        }
-    }, []);
+        getDailyWord();
+        loadValidGuesses();
 
-    // --- DATA LOADING & SAVING ---
+    }, [isUserLoading, firestore]);
+
     useEffect(() => {
-        if (!user || status !== 'loading') return;
+        if (!user || status !== 'loading' || !dailyWord) return;
 
-        const db = getFirestore();
+        const db = firestore;
         const statsDocRef = doc(db, 'users', user.uid);
-        const gameDocRef = doc(db, 'users', user.uid, 'games', wordDate);
+        const gameDocRef = doc(db, 'users', user.uid, 'gameStates', wordDate);
+
 
         const loadData = async () => {
             try {
@@ -313,9 +320,11 @@ export default function WordleGame() {
                 if (statsDoc.exists()) {
                     setStats(statsDoc.data() as PlayerStats);
                 } else {
-                    setStats({ played: 0, won: 0, currentStreak: 0, maxStreak: 0, guessDistribution: {1:0, 2:0, 3:0, 4:0, 5:0, 6:0} });
+                    const defaultStats: PlayerStats = { played: 0, won: 0, currentStreak: 0, maxStreak: 0, guessDistribution: {1:0, 2:0, 3:0, 4:0, 5:0, 6:0} };
+                    setStats(defaultStats);
+                    setDocumentNonBlocking(statsDocRef, defaultStats, { merge: true });
                 }
-
+                
                 if (gameDoc.exists()) {
                     const gameState = gameDoc.data() as GameState;
                     setGuesses(gameState.guesses);
@@ -327,12 +336,13 @@ export default function WordleGame() {
                 }
             } catch (error) {
                 console.error("Error loading data:", error);
-                setStatus('playing');
+                toast({ title: "Error loading your game", description: "Please refresh the page.", variant: "destructive" });
+                setStatus('playing'); // Let user play even if loading fails
             }
         };
         loadData();
 
-    }, [user, wordDate, status]);
+    }, [user, wordDate, dailyWord, status, firestore, toast]);
     
     const updateKeyColors = (allGuesses: string[], allEvals: Evaluation[]) => {
         const newKeyColors: KeyColors = {};
@@ -355,37 +365,36 @@ export default function WordleGame() {
 
     const handleGameEnd = useCallback(async (didWin: boolean) => {
         if (!user) return;
-        const db = getFirestore();
-        const statsDocRef = doc(db, 'users', user.uid);
+        
+        const statsDocRef = doc(firestore, 'users', user.uid);
 
         try {
-            await runTransaction(db, async (transaction) => {
+             await runTransaction(firestore, async (transaction) => {
                 const statsDoc = await transaction.get(statsDocRef);
                 const currentStats: PlayerStats = statsDoc.exists()
                     ? (statsDoc.data() as PlayerStats)
                     : { played: 0, won: 0, currentStreak: 0, maxStreak: 0, guessDistribution: {1:0, 2:0, 3:0, 4:0, 5:0, 6:0} };
 
-                const newStats = { ...currentStats };
-                newStats.played += 1;
+                const newStats = { ...currentStats, played: currentStats.played + 1 };
+                
                 if (didWin) {
                     newStats.won += 1;
                     newStats.currentStreak += 1;
-                    if (newStats.currentStreak > newStats.maxStreak) {
-                        newStats.maxStreak = newStats.currentStreak;
-                    }
-                    const guessCount = guesses.length;
+                    newStats.maxStreak = Math.max(newStats.maxStreak, newStats.currentStreak);
+                    const guessCount = guesses.length + 1; // +1 for the winning guess
                     newStats.guessDistribution[guessCount] = (newStats.guessDistribution[guessCount] || 0) + 1;
                 } else {
                     newStats.currentStreak = 0;
                 }
 
-                setStats(newStats);
+                setStats(newStats); // Optimistic UI update
                 transaction.set(statsDocRef, newStats);
             });
         } catch (error) {
             console.error("Error updating stats:", error);
+            toast({ title: "Could not save stats", variant: "destructive"});
         }
-    }, [user, guesses.length]);
+    }, [user, firestore, guesses.length, toast]);
 
     const processGuess = useCallback(async () => {
         if (currentGuess.length !== WORD_LENGTH) {
@@ -393,7 +402,7 @@ export default function WordleGame() {
             return;
         }
 
-        if (!VALID_GUESSES.has(currentGuess.toLowerCase())) {
+        if (!validGuesses.has(currentGuess.toLowerCase())) {
             toast({ title: "Not in word list", variant: "destructive" });
             return;
         }
@@ -412,25 +421,29 @@ export default function WordleGame() {
         const isLoss = newGuesses.length === MAX_GUESSES;
         const newStatus = isWin ? 'won' : isLoss ? 'lost' : 'playing';
 
+        // Wait for flip animation to complete before changing status
         setTimeout(() => {
             setStatus(newStatus);
-            if(isWin || isLoss) handleGameEnd(isWin);
+            if(isWin || isLoss) {
+                handleGameEnd(isWin);
+                if (isWin) toast({ title: "Congratulations!", description: `You guessed the word in ${newGuesses.length} tries.` });
+                else toast({ title: "Better luck next time!", description: `The word was ${dailyWord}.`});
+            }
         }, FLIP_ANIMATION_DURATION + (WORD_LENGTH * 100));
 
         // Save state to Firebase
         if (user) {
-            const db = getFirestore();
-            const gameDocRef = doc(db, 'users', user.uid, 'games', wordDate);
+            const gameDocRef = doc(firestore, 'users', user.uid, 'gameStates', wordDate);
             const gameState: GameState = {
                 guesses: newGuesses,
                 evaluations: newEvals,
                 status: newStatus,
                 lastPlayedTs: Date.now(),
             };
-            await setDoc(gameDocRef, gameState);
+            setDocumentNonBlocking(gameDocRef, gameState, { merge: true });
         }
 
-    }, [currentGuess, dailyWord, guesses, evaluations, user, wordDate, toast, handleGameEnd]);
+    }, [currentGuess, dailyWord, guesses, evaluations, user, wordDate, toast, handleGameEnd, firestore, validGuesses]);
 
     const getEvaluation = (guess: string, solution: string): Evaluation => {
         const solutionLetters = solution.split('');
@@ -462,7 +475,7 @@ export default function WordleGame() {
     };
 
     const onKeyPress = useCallback((key: string) => {
-        if (status !== 'playing') return;
+        if (status !== 'playing' || isUserLoading) return;
 
         if (key === 'enter') {
             processGuess();
@@ -471,13 +484,24 @@ export default function WordleGame() {
         } else if (currentGuess.length < WORD_LENGTH && /^[a-zA-Z]$/.test(key)) {
             setCurrentGuess(prev => (prev + key).toUpperCase());
         }
-    }, [status, currentGuess, processGuess]);
+    }, [status, currentGuess, processGuess, isUserLoading]);
 
     useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => onKeyPress(e.key.toLowerCase());
+        const handleKeyDown = (e: KeyboardEvent) => {
+            e.preventDefault();
+            onKeyPress(e.key.toLowerCase())
+        };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [onKeyPress]);
+
+    if (status === 'loading' || isUserLoading || !dailyWord) {
+      return (
+          <div className="w-full h-full flex items-center justify-center">
+              <div className="text-2xl">Loading Game...</div>
+          </div>
+      )
+    }
 
     return (
         <div className="w-full max-w-md mx-auto flex flex-col h-full">
@@ -494,32 +518,3 @@ export default function WordleGame() {
         </div>
     );
 }
-
-// Add keyframes for flip animation to tailwind config via a style tag (alternative to modifying tailwind.config.js for single file component)
-const GlobalStyles = () => (
-  <style jsx global>{`
-    @keyframes flip {
-      0% {
-        transform: rotateX(0);
-      }
-      50% {
-        transform: rotateX(-90deg);
-      }
-      100% {
-        transform: rotateX(0);
-      }
-    }
-    .animate-flip {
-      animation-name: flip;
-      animation-duration: 0.6s;
-      animation-timing-function: ease-in-out;
-    }
-    html, body, #__next {
-      height: 100%;
-      overflow: hidden;
-    }
-  `}</style>
-);
-// In a real app, this would be in globals.css or tailwind.config.js
-// Since it's self-contained, we can call this component once.
-(WordleGame as any).GlobalStyles = GlobalStyles;
