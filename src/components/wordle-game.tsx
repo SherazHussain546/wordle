@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { WORDLIST } from '@/lib/words';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import AdBanner from './ad-banner';
 
 // --- CONSTANTS ---
 const MAX_GUESSES = 6;
@@ -662,6 +663,10 @@ export default function WordleGame() {
         )}
       <Keyboard onKeyPress={onKeyPress} keyColors={keyColors} />
       <GameFooter />
+      <div className="w-full px-2 sm:px-4 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <AdBanner className="h-32" />
+        <AdBanner className="h-32" />
+      </div>
       <div className="px-2 pb-4">
         <Instructions />
       </div>
