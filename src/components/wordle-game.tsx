@@ -16,6 +16,8 @@ import { PieChart, Delete, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WORDLIST } from '@/lib/words';
 import Image from 'next/image';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // --- CONSTANTS ---
 const MAX_GUESSES = 6;
@@ -169,18 +171,31 @@ const Keyboard: FC<{ onKeyPress: (key: string) => void; keyColors: KeyColors }> 
   );
 });
 
-const StatsModal: FC = memo(() => {
+const StatsModal: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode: boolean; }> = memo(({ onHardModeToggle, isHardMode }) => {
   return (
     <DialogContent className="sm:max-w-md bg-card">
       <DialogHeader>
-        <DialogTitle className="text-center text-2xl font-bold">Statistics</DialogTitle>
+        <DialogTitle className="text-center text-2xl font-bold">Settings &amp; Stats</DialogTitle>
       </DialogHeader>
-      <div className="text-center text-muted-foreground">Player stats are not tracked in this version.</div>
+      <div className="space-y-4">
+        <div className="flex items-center space-x-2 rounded-lg border p-4">
+          <Checkbox id="hard-mode" checked={isHardMode} onCheckedChange={onHardModeToggle} />
+          <div className='grid gap-1.5 leading-none'>
+            <Label htmlFor="hard-mode" className="font-medium">
+              Hard Mode
+            </Label>
+            <p className='text-sm text-muted-foreground'>
+              Any revealed hints must be used in subsequent guesses.
+            </p>
+          </div>
+        </div>
+        <div className="text-center text-muted-foreground pt-4">Player stats are not tracked in this version.</div>
+      </div>
     </DialogContent>
   );
 });
 
-const Header: FC = memo(() => (
+const Header: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode: boolean; }> = memo(({ onHardModeToggle, isHardMode }) => (
   <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
     <div className="w-10"></div>
     <div className="flex items-center gap-2">
@@ -194,7 +209,7 @@ const Header: FC = memo(() => (
           <PieChart className="h-6 w-6" />
         </Button>
       </DialogTrigger>
-      <StatsModal />
+      <StatsModal onHardModeToggle={onHardModeToggle} isHardMode={isHardMode} />
     </Dialog>
   </header>
 ));
@@ -263,31 +278,64 @@ const GameFooter: FC = memo(() => (
 ));
 
 const Instructions: FC = memo(() => (
-  <div className="w-full text-left p-4 sm:p-6 bg-card rounded-lg my-4 border">
-    <h2 className="text-xl font-bold mb-2 text-center">How To Play</h2>
-    <p className="text-muted-foreground mb-4 text-center">Guess the Wordle in 6 tries.</p>
-    <ul className="space-y-2 mb-4 text-foreground">
-      <li>Each guess must be a valid 5-letter word.</li>
-      <li>The color of the tiles will change to show how close your guess was to the word.</li>
-    </ul>
+    <div className="w-full text-left p-4 sm:p-6 bg-card rounded-lg my-4 border">
+        <h2 className="text-xl font-bold mb-4 text-center">How To Play</h2>
+        <p className="text-muted-foreground mb-4 text-center">Guess the Wordle in 6 tries.</p>
+        <ul className="space-y-3 mb-6 text-foreground">
+            <li>Each guess must be a valid 5-letter word.</li>
+            <li>The color of the tiles will change to show how close your guess was to the word.</li>
+        </ul>
 
-    <h3 className="font-semibold mb-3 border-t pt-4">Examples</h3>
-    <div className="space-y-3">
-        <div className="flex items-center gap-3">
-            <div className="w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg bg-primary text-primary-foreground border-2 border-primary">W</div>
-            <p className="text-sm flex-1"><strong className="font-semibold">W</strong> is in the word and in the correct spot.</p>
+        <h3 className="font-semibold mb-4 border-t pt-4">Examples</h3>
+        <div className="space-y-4">
+            <div className="flex items-center gap-4">
+                <div className="flex gap-1">
+                    {'WEARY'.split('').map((letter, i) => (
+                        <div key={i} className={`w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg ${i === 0 ? 'bg-primary text-primary-foreground border-2 border-primary' : 'bg-transparent border-2 border-border'}`}>{letter}</div>
+                    ))}
+                </div>
+                <p className="text-sm flex-1"><strong className="font-semibold">W</strong> is in the word and in the correct spot.</p>
+            </div>
+            <div className="flex items-center gap-4">
+                <div className="flex gap-1">
+                    {'PILLS'.split('').map((letter, i) => (
+                        <div key={i} className={`w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg ${i === 1 ? 'bg-accent text-accent-foreground border-2 border-accent' : 'bg-transparent border-2 border-border'}`}>{letter}</div>
+                    ))}
+                </div>
+                <p className="text-sm flex-1"><strong className="font-semibold">I</strong> is in the word but in the wrong spot.</p>
+            </div>
+            <div className="flex items-center gap-4">
+                <div className="flex gap-1">
+                    {'VAGUE'.split('').map((letter, i) => (
+                        <div key={i} className={`w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg ${i === 3 ? 'bg-muted-foreground/80 text-white border-2 border-muted-foreground/80' : 'bg-transparent border-2 border-border'}`}>{letter}</div>
+                    ))}
+                </div>
+                <p className="text-sm flex-1"><strong className="font-semibold">U</strong> is not in the word in any spot.</p>
+            </div>
         </div>
-        <div className="flex items-center gap-3">
-            <div className="w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg bg-accent text-accent-foreground border-2 border-accent">I</div>
-            <p className="text-sm flex-1"><strong className="font-semibold">I</strong> is in the word but in the wrong spot.</p>
-        </div>
-        <div className="flex items-center gap-3">
-            <div className="w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg bg-muted-foreground/80 text-white border-2 border-muted-foreground/80">U</div>
-            <p className="text-sm flex-1"><strong className="font-semibold">U</strong> is not in the word in any spot.</p>
+
+        <h2 className="text-xl font-bold mt-8 mb-4 text-center border-t pt-6">Tips &amp; Tricks</h2>
+        <div className="space-y-4 text-sm text-foreground">
+            <div className="p-4 rounded-lg border bg-background">
+                <h4 className="font-semibold mb-2">Start with a word that has a lot of vowels.</h4>
+                <p className="text-muted-foreground">Words like "ADIEU," "AUDIO," or "CANOE" are great choices because they help you quickly determine which vowels are in the daily word.</p>
+            </div>
+            <div className="p-4 rounded-lg border bg-background">
+                <h4 className="font-semibold mb-2">Use two very different words for your first two guesses.</h4>
+                <p className="text-muted-foreground">After your first guess, try a second word with completely different letters. For example, if you start with "AUDIO," a good second guess could be "SLYNT." This strategy helps eliminate or confirm up to 10 different letters right away.</p>
+            </div>
+            <div className="p-4 rounded-lg border bg-background">
+                <h4 className="font-semibold mb-2">Watch out for duplicate letters.</h4>
+                <p className="text-muted-foreground">Remember that a letter can appear more than once. Words like "SPOON" or "KNOLL" can be tricky, so if you're stuck, consider the possibility of a repeated letter.</p>
+            </div>
+            <div className="p-4 rounded-lg border bg-background">
+                <h4 className="font-semibold mb-2">Try "Hard Mode" for an extra challenge.</h4>
+                <p className="text-muted-foreground">In Hard Mode, you must use any revealed hints in subsequent guesses. This can be more difficult, but it forces you to think more strategically and can lead to solving the puzzle faster. You can enable it in the Settings.</p>
+            </div>
         </div>
     </div>
-  </div>
 ));
+
 
 // --- MAIN GAME COMPONENT ---
 export default function WordleGame() {
@@ -304,6 +352,7 @@ export default function WordleGame() {
   const [keyColors, setKeyColors] = useState<KeyColors>({});
   const [validWords, setValidWords] = useState(new Set(WORDLIST));
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isHardMode, setIsHardMode] = useState(false);
   
   const [isClient, setIsClient] = useState(false);
   useEffect(() => {
@@ -405,6 +454,29 @@ export default function WordleGame() {
     }
 
     const upperCaseGuess = currentGuess.toUpperCase();
+    
+    if (isHardMode) {
+      const lastEval = evaluations[evaluations.length - 1];
+      const lastGuess = guesses[guesses.length - 1];
+      
+      // Check for correct letters (green)
+      for(let i=0; i<WORD_LENGTH; i++) {
+        if(lastEval[i] === 'correct' && upperCaseGuess[i] !== lastGuess[i]) {
+          toast({ title: 'Hard Mode', description: `Letter ${lastGuess[i]} must be in position ${i+1}`, variant: 'destructive', duration: 2000 });
+          return;
+        }
+      }
+
+      // Check for present letters (yellow)
+      const presentLetters = lastGuess.split('').filter((_,i) => lastEval[i] === 'present');
+      for(const letter of presentLetters) {
+        if(!upperCaseGuess.includes(letter)) {
+          toast({ title: 'Hard Mode', description: `Guess must contain ${letter}`, variant: 'destructive', duration: 2000 });
+          return;
+        }
+      }
+    }
+
 
     let isValidWord = validWords.has(upperCaseGuess);
 
@@ -448,7 +520,7 @@ export default function WordleGame() {
         handleGameOver(isWin ? 'won' : 'lost');
       }, FLIP_ANIMATION_DURATION + WORD_LENGTH * 100);
     }
-  }, [currentGuess, dailyWord, guesses, evaluations, toast, handleGameOver, validWords]);
+  }, [currentGuess, dailyWord, guesses, evaluations, toast, handleGameOver, validWords, isHardMode]);
 
   const onKeyPress = useCallback(
     (key: string) => {
@@ -472,6 +544,22 @@ export default function WordleGame() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onKeyPress]);
+  
+  const handleHardModeToggle = (checked: boolean) => {
+    if (guesses.length > 0) {
+      toast({
+        title: "Cannot change mode mid-game",
+        description: "Please finish or restart the current game to change the difficulty.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setIsHardMode(checked);
+    toast({
+        title: `Hard Mode ${checked ? 'Enabled' : 'Disabled'}`,
+        description: checked ? "Good luck!" : "",
+    });
+  }
 
   if (status === 'loading' || !isClient) {
     return (
@@ -483,7 +571,7 @@ export default function WordleGame() {
 
   return (
     <div className="w-full max-w-md mx-auto flex flex-col h-full bg-background">
-      <Header />
+      <Header onHardModeToggle={handleHardModeToggle} isHardMode={isHardMode} />
       <div className="w-full flex-grow flex flex-col px-2">
         <GameGrid guesses={guesses} currentGuess={currentGuess} evaluations={evaluations} currentRowIndex={currentRowIndex} />
       </div>
