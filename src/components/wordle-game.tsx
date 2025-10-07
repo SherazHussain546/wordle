@@ -267,7 +267,7 @@ export default function WordleGame() {
 
      // --- DATA LOADING & SAVING ---
     useEffect(() => {
-        if (isUserLoading) return;
+        if (isUserLoading || !firestore) return;
 
         const db = firestore;
 
@@ -303,7 +303,7 @@ export default function WordleGame() {
     }, [isUserLoading, firestore]);
 
     useEffect(() => {
-        if (!user || status !== 'loading' || !dailyWord) return;
+        if (!user || status !== 'loading' || !dailyWord || isUserLoading) return;
 
         const db = firestore;
         const statsDocRef = doc(db, 'users', user.uid);
@@ -342,7 +342,7 @@ export default function WordleGame() {
         };
         loadData();
 
-    }, [user, wordDate, dailyWord, status, firestore, toast]);
+    }, [user, wordDate, dailyWord, status, firestore, toast, isUserLoading]);
     
     const updateKeyColors = (allGuesses: string[], allEvals: Evaluation[]) => {
         const newKeyColors: KeyColors = {};
@@ -364,7 +364,7 @@ export default function WordleGame() {
     };
 
     const handleGameEnd = useCallback(async (didWin: boolean) => {
-        if (!user) return;
+        if (!user || !firestore) return;
         
         const statsDocRef = doc(firestore, 'users', user.uid);
 
@@ -432,7 +432,7 @@ export default function WordleGame() {
         }, FLIP_ANIMATION_DURATION + (WORD_LENGTH * 100));
 
         // Save state to Firebase
-        if (user) {
+        if (user && firestore) {
             const gameDocRef = doc(firestore, 'users', user.uid, 'gameStates', wordDate);
             const gameState: GameState = {
                 guesses: newGuesses,
@@ -443,7 +443,7 @@ export default function WordleGame() {
             setDocumentNonBlocking(gameDocRef, gameState, { merge: true });
         }
 
-    }, [currentGuess, dailyWord, guesses, evaluations, user, wordDate, toast, handleGameEnd, firestore, validGuesses]);
+    }, [currentGuess, dailyWord, guesses, evaluations, user, firestore, wordDate, toast, handleGameEnd, validGuesses]);
 
     const getEvaluation = (guess: string, solution: string): Evaluation => {
         const solutionLetters = solution.split('');
@@ -488,7 +488,6 @@ export default function WordleGame() {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            e.preventDefault();
             onKeyPress(e.key.toLowerCase())
         };
         window.addEventListener('keydown', handleKeyDown);
