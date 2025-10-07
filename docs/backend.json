@@ -1,0 +1,255 @@
+{
+  "entities": {
+    "GameState": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "GameState",
+      "type": "object",
+      "description": "Represents the current state of a Wordle game for a user on a specific day.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the GameState entity. Composed of userId and the dailyWordDate."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N GameState).  The user's unique identifier."
+        },
+        "dailyWordDate": {
+          "type": "string",
+          "description": "The UTC date for which the daily word was generated.  Used to ensure the correct word is loaded. Format: ISO 8601 date string (YYYY-MM-DD)."
+        },
+        "guesses": {
+          "type": "array",
+          "description": "An array of strings representing the user's guesses.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the game (e.g., 'playing', 'won', 'lost')."
+        },
+        "currentGuessIndex": {
+          "type": "number",
+          "description": "The index of the current guess attempt (0-indexed).",
+          "format": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "dailyWordDate",
+        "guesses",
+        "status",
+        "currentGuessIndex"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "email"
+      ]
+    },
+    "Statistics": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Statistics",
+      "type": "object",
+      "description": "Represents lifetime player statistics for a user.",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:1 Statistics). The user's unique identifier."
+        },
+        "played": {
+          "type": "number",
+          "description": "The total number of games played by the user.",
+          "format": "integer"
+        },
+        "won": {
+          "type": "number",
+          "description": "The total number of games won by the user.",
+          "format": "integer"
+        },
+        "currentStreak": {
+          "type": "number",
+          "description": "The user's current win streak.",
+          "format": "integer"
+        },
+        "maxStreak": {
+          "type": "number",
+          "description": "The user's maximum win streak.",
+          "format": "integer"
+        },
+        "guessDistribution": {
+          "type": "array",
+          "description": "An array representing the distribution of guesses it took the user to win games.  Index represents the number of guesses (1-6).",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "userId",
+        "played",
+        "won",
+        "currentStreak",
+        "guessDistribution"
+      ]
+    },
+    "DailyWord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "DailyWord",
+      "type": "object",
+      "description": "Stores the daily word for a specific date. This is to prevent re-generation or lookup each time.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the DailyWord entity. Which is the UTC date string (YYYY-MM-DD)."
+        },
+        "word": {
+          "type": "string",
+          "description": "The 5-letter word for the day."
+        },
+        "date": {
+          "type": "string",
+          "description": "The UTC date for which the word is valid. Format: ISO 8601 date string (YYYY-MM-DD)."
+        }
+      },
+      "required": [
+        "id",
+        "word",
+        "date"
+      ]
+    },
+    "WordList": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "WordList",
+      "type": "object",
+      "description": "Represents a word in the valid word list.",
+      "properties": {
+        "word": {
+          "type": "string",
+          "description": "A 5-letter word."
+        },
+        "isValidGuess": {
+          "type": "boolean",
+          "description": "Indicates if the word is a valid guess."
+        }
+      },
+      "required": [
+        "word",
+        "isValidGuess"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles, indexed by userId.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/gameStates/{gameStateId}",
+        "definition": {
+          "entityName": "GameState",
+          "schema": {
+            "$ref": "#/backend/entities/GameState"
+          },
+          "description": "Stores the game state for a specific user and date. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "gameStateId",
+              "description": "The unique identifier of the game state, composed of userId and dailyWordDate."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/statistics",
+        "definition": {
+          "entityName": "Statistics",
+          "schema": {
+            "$ref": "#/backend/entities/Statistics"
+          },
+          "description": "Stores lifetime statistics for a user, indexed by userId.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/dailyWords/{dailyWordDate}",
+        "definition": {
+          "entityName": "DailyWord",
+          "schema": {
+            "$ref": "#/backend/entities/DailyWord"
+          },
+          "description": "Stores the daily word for a specific date. The document ID is the date string (YYYY-MM-DD).",
+          "params": [
+            {
+              "name": "dailyWordDate",
+              "description": "The UTC date string (YYYY-MM-DD) for which the daily word is valid."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/wordList/{word}",
+        "definition": {
+          "entityName": "WordList",
+          "schema": {
+            "$ref": "#/backend/entities/WordList"
+          },
+          "description": "Stores a list of valid words. Document ID is the word itself.",
+          "params": [
+            {
+              "name": "word",
+              "description": "A 5-letter word."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure prioritizes authorization independence and efficient data retrieval for the Wordle game. User data and game-related data are segregated into dedicated collections to maintain a clear security posture.  Specifically:\n\n1.  **Users Collection:** Stores user profiles, indexed by `userId`. This allows direct access to user information.\n2.  **Users/{userId}/GameStates Collection:** Each user has a subcollection of `GameStates`. The `GameState` documents include `userId` (denormalized), facilitating rules based on user ownership without requiring `get()` calls. The `id` of the document is the composite key of `userId` + `dailyWordDate`.\n3.  **Users/{userId}/statistics Document:** Each user has a single document with their lifetime statistics.\n4.  **dailyWords Collection:** Stores the daily word. The `id` is `dailyWordDate`. This allows quick lookup of the daily word without needing to query.\n5.  **wordList Collection:**  Stores all possible valid words. Documents are indexed by `word`. This allows for quick validation of guesses.\n\nThis structure enables Authorization Independence by denormalizing the `userId` into the `GameStates` collection.  QAPs are supported by:\n\n*   **Segregation:**  The segregation of `users`, `gameStates`, `dailyWords`, and `wordList` allows for focused security rules on each collection.\n*   **Path-Based Ownership:** The use of `/users/{userId}/gameStates/{gameStateId}` enforces clear ownership of game states by individual users, simplifying security rules and preventing unauthorized access."
+  }
+}

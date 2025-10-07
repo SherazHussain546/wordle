@@ -73,14 +73,14 @@ const Tile: FC<TileProps> = memo(({ letter, state, isRevealing, isCompleted, ind
       correct: 'bg-primary border-primary text-primary-foreground',
       present: 'bg-accent border-accent text-accent-foreground',
       absent: 'bg-muted-foreground/80 border-muted-foreground/80 text-white',
-      empty: 'bg-transparent border-muted-foreground/20',
-      tbd: 'bg-transparent border-muted-foreground/50 text-foreground',
+      empty: 'bg-transparent border-border',
+      tbd: 'bg-transparent border-foreground/50 text-foreground',
     };
 
     return (
         <div
             className={cn(
-                "flex items-center justify-center text-3xl font-bold uppercase aspect-square rounded-md transition-all duration-300 border-2",
+                "flex items-center justify-center text-2xl sm:text-3xl font-bold uppercase aspect-square rounded-md transition-all duration-300 border-2",
                 isRevealing && "animate-flip",
                 isCompleted ? stateClasses[state] : stateClasses[state === 'empty' ? 'empty' : 'tbd'],
             )}
@@ -126,8 +126,8 @@ interface GameGridProps {
 }
 const GameGrid: FC<GameGridProps> = memo(({ guesses, currentGuess, evaluations, currentRowIndex }) => {
     return (
-        <div className="flex-grow flex items-center justify-center w-full">
-            <div className="grid grid-rows-6 gap-1.5 w-full max-w-[350px]">
+        <div className="flex items-center justify-center w-full my-auto">
+            <div className="grid grid-rows-6 gap-1.5 w-full max-w-[320px] sm:max-w-[350px]">
                 {Array.from({ length: MAX_GUESSES }).map((_, i) => (
                     <Row
                         key={i}
@@ -159,12 +159,12 @@ const Keyboard: FC<{ onKeyPress: (key: string) => void, keyColors: KeyColors }> 
             case 'correct': return `bg-primary text-primary-foreground hover:bg-primary/90 ${baseClasses} border-primary`;
             case 'present': return `bg-accent text-accent-foreground hover:bg-accent/90 ${baseClasses} border-accent`;
             case 'absent': return `bg-muted-foreground/50 text-white hover:bg-muted-foreground/60 ${baseClasses} border-muted-foreground/50`;
-            default: return `bg-muted hover:bg-muted/80 ${baseClasses} border-muted-foreground/20`;
+            default: return `bg-muted hover:bg-muted/80 text-foreground border-border`;
         }
     };
     
     return (
-        <div className="w-full flex flex-col items-center pb-2 pt-1">
+        <div className="w-full flex flex-col items-center pb-1 pt-1">
             {keyboardLayout.map((row, i) => (
                 <div key={i} className="flex justify-center gap-1 my-0.5 w-full">
                     {row.map((key) => (
@@ -172,8 +172,8 @@ const Keyboard: FC<{ onKeyPress: (key: string) => void, keyColors: KeyColors }> 
                             key={key}
                             onClick={() => onKeyPress(key)}
                             className={cn(
-                                'h-11 sm:h-12 uppercase font-bold transition-colors duration-300',
-                                key.length > 1 ? 'px-3 flex-grow' : 'w-8 sm:w-10 flex-1',
+                                'h-10 sm:h-12 uppercase font-bold transition-colors duration-300 text-xs sm:text-base',
+                                key.length > 1 ? 'px-2 sm:px-3 flex-grow' : 'w-7 sm:w-10 flex-1',
                                 getKeyClass(key)
                             )}
                         >
@@ -236,9 +236,9 @@ const StatsModal: FC<{ stats: PlayerStats | null }> = memo(({ stats }) => {
 
 
 const Header: FC<{ stats: PlayerStats | null }> = memo(({ stats }) => (
-    <header className="flex items-center justify-between w-full p-2 border-b">
+    <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
         <div className="w-10"></div>
-        <h1 className="text-3xl font-bold tracking-wider uppercase">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase">
             Word<span className="text-primary">Master</span>
         </h1>
         <Dialog>
@@ -482,7 +482,7 @@ export default function WordleGame() {
     return (
         <div className="w-full max-w-md mx-auto flex flex-col h-full">
             <Header stats={stats} />
-            <div className="w-full flex-grow flex flex-col px-2 pt-2 pb-1">
+            <div className="w-full flex-grow flex flex-col px-2">
                 <GameGrid
                     guesses={guesses}
                     currentGuess={currentGuess}
@@ -516,6 +516,7 @@ const GlobalStyles = () => (
     }
     html, body, #__next {
       height: 100%;
+      overflow: hidden;
     }
   `}</style>
 );
