@@ -15,6 +15,7 @@ import {
 import { PieChart, Delete, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WORDLIST } from '@/lib/words';
+import Image from 'next/image';
 
 // --- CONSTANTS ---
 const MAX_GUESSES = 6;
@@ -182,9 +183,12 @@ const StatsModal: FC = memo(() => {
 const Header: FC = memo(() => (
   <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
     <div className="w-10"></div>
-    <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase">
-      Wordle<span className="text-primary">Master</span>
-    </h1>
+    <div className="flex items-center gap-2">
+      <Image src="/gamingSYNC.png" alt="WordleMaster Logo" width={32} height={32} />
+      <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase">
+        Wordle<span className="text-primary">Master</span>
+      </h1>
+    </div>
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon">
@@ -257,6 +261,31 @@ const GameFooter: FC = memo(() => (
       </a>
     </p>
   </footer>
+));
+
+const Instructions: FC = memo(() => (
+  <div className="w-full text-left p-4 sm:p-6 bg-card rounded-lg my-4 border">
+    <h2 className="text-xl font-bold mb-3 text-center">How to Play</h2>
+    <p className="text-muted-foreground mb-4 text-center">Guess the hidden word in 6 tries.</p>
+    <ul className="space-y-3 list-disc list-inside text-foreground">
+      <li>Each guess must be a valid 5-letter word. Hit the enter button to submit.</li>
+      <li>After each guess, the color of the tiles will change to show how close your guess was to the word.</li>
+    </ul>
+    <div className="flex flex-col sm:flex-row justify-around my-4 gap-4">
+        <div className="flex items-center gap-2">
+            <div className="w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg bg-primary text-primary-foreground border-2 border-primary">W</div>
+            <p className="text-sm flex-1"><strong className="font-semibold">Green:</strong> The letter is in the word and in the correct spot.</p>
+        </div>
+        <div className="flex items-center gap-2">
+            <div className="w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg bg-accent text-accent-foreground border-2 border-accent">P</div>
+            <p className="text-sm flex-1"><strong className="font-semibold">Yellow:</strong> The letter is in the word but in the wrong spot.</p>
+        </div>
+        <div className="flex items-center gap-2">
+            <div className="w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg bg-muted-foreground/80 text-white border-2 border-muted-foreground/80">V</div>
+            <p className="text-sm flex-1"><strong className="font-semibold">Gray:</strong> The letter is not in the word in any spot.</p>
+        </div>
+    </div>
+  </div>
 ));
 
 // --- MAIN GAME COMPONENT ---
@@ -467,6 +496,9 @@ export default function WordleGame() {
         )}
       <Keyboard onKeyPress={onKeyPress} keyColors={keyColors} />
       <GameFooter />
+      <div className="px-2 pb-4">
+        <Instructions />
+      </div>
       <GameOverDialog
         isOpen={isGameOver}
         status={status as 'won' | 'lost'}
