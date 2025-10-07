@@ -2,19 +2,20 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-
-const ValidateWordInputSchema = z.string().length(5).describe('A 5-letter word to validate.');
-const ValidateWordOutputSchema = z.boolean().describe('Whether the word is a valid English word.');
+import { googleAI } from '@genkit-ai/google-genai';
 
 export async function validateWord(word: string): Promise<boolean> {
   return validateWordFlow(word);
 }
 
+const ValidateWordInputSchema = z.string().length(5).describe('A 5-letter word to validate.');
+const ValidateWordOutputSchema = z.boolean().describe('Whether the word is a valid English word.');
+
 const prompt = ai.definePrompt({
   name: 'validateWordPrompt',
   input: { schema: ValidateWordInputSchema },
   output: { schema: ValidateWordOutputSchema },
-  model: 'gemini-pro',
+  model: googleAI.model('gemini-pro'),
   prompt: `You are an English dictionary expert. Your task is to determine if a given 5-letter string is a real, common English word.
   
   Do not consider proper nouns, abbreviations, or slang unless they are extremely common in everyday English.
