@@ -1,113 +1,133 @@
 /**
  * @description This ruleset enforces a strict user-ownership model for user data and game states,
- *              while allowing public read access to daily words and the word list.
+ *              while allowing public read access to the daily words and word list.
  * @dataStructure
- *   - /users/{userId}: Stores user profiles, accessible only by the user themselves.
- *   - /users/{userId}/gameStates/{gameStateId}: Stores game states, accessible only by the owning user.
- *   - /users/{userId}/statistics: Stores user statistics, accessible only by the user themselves.
- *   - /dailyWords/{dailyWordDate}: Stores daily words, publicly readable.
- *   - /wordList/{word}: Stores a list of valid words, publicly readable.
+ *  - /users/{userId}: Stores user profiles, accessible only to the user themselves.
+ *  - /users/{userId}/gameStates/{gameStateId}: Stores game states, accessible only to the owning user.
+ *  - /users/{userId}/statistics: Stores user statistics, accessible only to the user themselves.
+ *  - /dailyWords/{dailyWordDate}: Stores the daily word for a given date; publicly readable.
+ *  - /wordList/{word}: Stores a list of valid words; publicly readable.
  * @keySecurityDecisions
- *   - User data is strictly controlled by the user's ID, preventing unauthorized access.
- *   - Game states are owned by the user and stored under their respective user ID.
- *   - Public read access is granted to the daily words and word list to allow the game to function without authentication for read operations.
- *   - Write access to dailyWords is currently open, but should be restricted in a production environment (TODO).
- * @denormalizationForAuthorization The `userId` is denormalized into the `GameState` documents to simplify ownership checks.
- * @structuralSegregation Publicly readable data (dailyWords, wordList) is stored in separate top-level collections,
- *                         while private user data is stored under the /users/{userId} path.
+ *  - User listing is disallowed.
+ *  - All write operations on user-owned data require the user to be authenticated and the owner of the data.
+ *  - The dailyWords and wordList collections are publicly readable but only writable by backend processes (simulated here with a missing rule for writes, which defaults to deny).
+ *  - Data validation is relaxed to facilitate rapid prototyping, focusing only on authorization and relational integrity.
+ * @denormalizationForAuthorization
+ *  - The `GameState` documents in the `/users/{userId}/gameStates/{gameStateId}` subcollection include a denormalized `userId` field. This allows us to validate ownership without additional `get()` calls.
+ * @structuralSegregation
+ *  - Private user data (profiles, game states, statistics) is stored under the `/users/{userId}` path, while public data (daily words, word list) is stored in top-level collections. This separation simplifies access control and improves query performance.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows a user to read and write their own user profile.
+     * @description Controls access to user profile documents.  Users can only read and write their own profiles.
      * @path /users/{userId}
-     * @allow (create) - User with UID 'user123' can create a document with id 'user123'.
-     * @allow (get, update, delete) - User with UID 'user123' can read, update, or delete the document with id 'user123'.
-     * @deny (create) - User with UID 'user456' cannot create a document with id 'user123'.
-     * @deny (get, update, delete) - User with UID 'user456' cannot read, update, or delete the document with id 'user123'.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) - Authenticated user with UID 'user_abc' can create their profile with id = 'user_abc'.
+     * @allow (get) - Authenticated user with UID 'user_abc' can read their own profile (users/user_abc).
+     * @allow (update) - Authenticated user with UID 'user_abc' can update their own profile (users/user_abc).
+     * @allow (delete) - Authenticated user with UID 'user_abc' can delete their own profile (users/user_abc).
+     * @deny (create) - Authenticated user with UID 'user_def' cannot create a profile with id = 'user_abc'.
+     * @deny (get) - Authenticated user with UID 'user_def' cannot read another user's profile (users/user_abc).
+     * @deny (update) - Authenticated user with UID 'user_def' cannot update another user's profile (users/user_abc).
+     * @deny (delete) - Authenticated user with UID 'user_def' cannot delete another user's profile (users/user_abc).
+     * @principle Enforces document ownership for all operations on user profiles.
      */
     match /users/{userId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-      allow get: if isOwner(userId);
+      allow get: if isSignedIn() && isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Allows a user to manage their own game states.
+     * @description Controls access to game state documents within a user's subcollection.
+     *              Users can only read, create, update, and delete their own game states.
      * @path /users/{userId}/gameStates/{gameStateId}
-     * @allow (create) - User 'user123' can create a new game state under their user ID.
-     * @allow (get, list, update, delete) - User 'user123' can read, list, update, and delete their own game states.
-     * @deny (create, get, list, update, delete) - User 'user456' cannot access game states under 'user123'.
-     * @principle Enforces ownership of game states, preventing cross-user access.
+     * @allow (create) - Authenticated user with UID 'user_abc' can create a game state under their profile.
+     * @allow (get) - Authenticated user with UID 'user_abc' can read a game state under their profile.
+     * @allow (update) - Authenticated user with UID 'user_abc' can update a game state under their profile.
+     * @allow (delete) - Authenticated user with UID 'user_abc' can delete a game state under their profile.
+     * @deny (create) - Authenticated user with UID 'user_def' cannot create a game state under another user's profile.
+     * @deny (get) - Authenticated user with UID 'user_def' cannot read a game state under another user's profile.
+     * @deny (update) - Authenticated user with UID 'user_def' cannot update a game state under another user's profile.
+     * @deny (delete) - Authenticated user with UID 'user_def' cannot delete a game state under another user's profile.
+     * @principle Enforces document ownership for all operations on game states.
      */
     match /users/{userId}/gameStates/{gameStateId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Allows a user to read and update their own statistics.
+     * @description Controls access to user statistics documents.
+     *              Users can only read and update their own statistics.
      * @path /users/{userId}/statistics
-     * @allow (get, update) - User 'user123' can read and update their own statistics.
-     * @deny (get, update) - User 'user456' cannot read or update the statistics of user 'user123'.
-     * @principle Restricts access to statistics to the owning user.
+     * @allow (create) - Authenticated user with UID 'user_abc' can create their statistics document.
+     * @allow (get) - Authenticated user with UID 'user_abc' can read their own statistics.
+     * @allow (update) - Authenticated user with UID 'user_abc' can update their own statistics.
+     * @deny (create) - Authenticated user with UID 'user_def' cannot create another user's statistics document.
+     * @deny (get) - Authenticated user with UID 'user_def' cannot read another user's statistics.
+     * @deny (update) - Authenticated user with UID 'user_def' cannot update another user's statistics document.
+     * @deny (delete) - No one can delete a statistics document.
+     * @principle Enforces document ownership for reads and updates on user statistics.
      */
     match /users/{userId}/statistics {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-      allow get: if isOwner(userId);
+      allow get: if isSignedIn() && isOwner(userId);
       allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if false;
     }
 
     /**
-     * @description Allows public read access to daily words, but restricts write access.
+     * @description Controls access to daily word documents. These are publicly readable.
+     *              Write access is implicitly denied, as there's no allow write rule.
      * @path /dailyWords/{dailyWordDate}
-     * @allow (get, list) - Any user can read the daily word.
-     * @deny (create, update, delete) - Only authorized users can create, update, or delete the daily word.
-     * @principle Provides public access for reading, owner-only for writing.
+     * @allow (get) - Any user (or no user) can get the daily word.
+     * @allow (list) - Any user (or no user) can list the daily words.
+     * @principle Allows public read access to the daily word.
      */
     match /dailyWords/{dailyWordDate} {
-      allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Allows public read access to the word list, but restricts write access.
+     * @description Controls access to the word list documents. These are publicly readable.
+     *              Write access is implicitly denied, as there's no allow write rule.
      * @path /wordList/{word}
-     * @allow (get, list) - Any user can read a word from the list.
-     * @deny (create, update, delete) - No one can create, update, or delete words in the list.
-     * @principle Provides public access for reading the word list, but prohibits writing.
+     * @allow (get) - Any user (or no user) can get a word from the word list.
+     * @allow (list) - Any user (or no user) can list the words in the word list.
+     * @principle Allows public read access to the word list.
      */
     match /wordList/{word} {
-      allow get, list: if true;
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get: if true;
+      allow list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
+  }
+
+  // Helper functions
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  function isOwner(userId) {
+    return request.auth.uid == userId;
+  }
+
+  function isExistingOwner(userId) {
+    return isOwner(userId) && resource != null;
   }
 }
