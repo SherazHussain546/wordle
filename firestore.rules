@@ -1,41 +1,34 @@
 /**
- * @file Overview
- * This ruleset enforces a strict user-ownership model for user-related data
- * and provides public read access to daily words and the word list.
- *
+ * @file Firestore Security Rules for Wordle Game
+ * @core_philosophy This ruleset enforces a strict user-ownership model for user data and game states,
+ *  while allowing public read access to the daily word list and word validation list.
  * @data_structure
- * - /users/{userId}: Stores user profiles. Each user can only access their own profile.
- * - /users/{userId}/gameStates/{gameStateId}: Stores game states for each user.
- *   Each user can only access their own game states.
- * - /users/{userId}/statistics: Stores statistics for each user.
- *   Each user can only access their own statistics.
- * - /dailyWords/{dailyWordDate}: Stores the daily word for a given date. This collection is publicly readable.
- *   Writes are not allowed in this prototype, but should later be restricted.
- * - /wordList/{word}: Stores the list of valid words. This collection is publicly readable.
- *   Writes are not allowed in this prototype, but should later be restricted.
- *
+ *  - /users/{userId}: Stores user profiles, accessible only to the user themselves.
+ *  - /users/{userId}/gameStates/{gameStateId}: Stores individual game states, accessible only to the owning user.
+ *  - /users/{userId}/statistics: Stores lifetime statistics for a user, accessible only to the user.
+ *  - /dailyWords/{dailyWordDate}: Stores daily words; publicly readable.
+ *  - /wordList/{word}: Stores a list of valid words; publicly readable.
  * @key_security_decisions
- * - User listing is disallowed.
- * - Ambiguous relationships default to strict owner-only access.
- * - Daily words and the word list are publicly readable but require authentication for writes.
- *
- * @denormalization_for_authorization
- * - GameState documents include a denormalized `userId` to allow ownership checks without additional reads.
- *
- * @structural_segregation
- * - Private user data is stored under /users/{userId}, while public data (dailyWords, wordList) is stored at the top level.
+ *  - User listing is disallowed to protect privacy.
+ *  - Game states are strictly owned by the user and cannot be accessed by others.
+ *  - Daily words and word list are publicly readable to facilitate gameplay.
+ * @denormalization_for_authorization The `GameState` documents include `userId` (denormalized),
+ *  facilitating rules based on user ownership without requiring `get()` calls.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Secure user profiles. Only the authenticated user can read/write their own profile.
+     * @description Controls access to user profiles.  Users can only read and write their own profiles.
      * @path /users/{userId}
-     * @allow (create) - Authenticated user creates their profile with matching userId.
-     * @allow (get, update, delete) - Authenticated user reads/writes their own profile.
-     * @deny (create, get, update, delete) - Any user attempts to access another user's profile.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) User with ID 'user123' can create their profile with matching userId.
+     * @allow (get) User with ID 'user123' can read their own profile.
+     * @allow (update) User with ID 'user123' can update their own profile.
+     * @allow (delete) User with ID 'user123' can delete their own profile.
+     * @deny (create) User with ID 'user123' cannot create a profile with userId 'user456'.
+     * @deny (get) User with ID 'user123' cannot read the profile of user 'user456'.
+     * @principle Enforces document ownership for all operations on user profiles.
      */
     match /users/{userId} {
       function isSignedIn() {
@@ -58,11 +51,15 @@ service cloud.firestore {
     }
 
     /**
-     * @description Secure game states. Only the authenticated user can read/write their own game states.
+     * @description Controls access to game states for a specific user. Only the owning user can manage their game states.
      * @path /users/{userId}/gameStates/{gameStateId}
-     * @allow (create, get, update, delete) - Authenticated user reads/writes their own game state.
-     * @deny (create, get, update, delete) - Any user attempts to access another user's game state.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) User 'user123' can create a new gameState under their userId.
+     * @allow (get) User 'user123' can read their own gameState.
+     * @allow (update) User 'user123' can update their own gameState.
+     * @allow (delete) User 'user123' can delete their own gameState.
+     * @deny (create) User 'user123' cannot create a gameState under userId 'user456'.
+     * @deny (get) User 'user123' cannot read gameState of user 'user456'.
+     * @principle Enforces document ownership and prevents unauthorized access to game state data.
      */
     match /users/{userId}/gameStates/{gameStateId} {
       function isSignedIn() {
@@ -78,18 +75,22 @@ service cloud.firestore {
       }
 
       allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
+      allow list: if false;
       allow create: if isSignedIn() && isOwner(userId);
       allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Secure user statistics. Only the authenticated user can read/write their own statistics.
+     * @description Controls access to user statistics. Only the owning user can read/write their statistics.
      * @path /users/{userId}/statistics
-     * @allow (create, get, update, delete) - Authenticated user reads/writes their own statistics.
-     * @deny (create, get, update, delete) - Any user attempts to access another user's statistics.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) User 'user123' can create their statistics document.
+     * @allow (get) User 'user123' can read their statistics.
+     * @allow (update) User 'user123' can update their statistics.
+     * @allow (delete) User 'user123' can delete their statistics.
+     * @deny (create) User 'user123' cannot create statistics for user 'user456'.
+     * @deny (get) User 'user123' cannot read the statistics of user 'user456'.
+     * @principle Enforces document ownership and protects user-specific statistical data.
      */
     match /users/{userId}/statistics {
       function isSignedIn() {
@@ -100,7 +101,7 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
 
-       function isExistingOwner(userId) {
+      function isExistingOwner(userId) {
         return isOwner(userId) && resource != null;
       }
 
@@ -112,33 +113,39 @@ service cloud.firestore {
     }
 
     /**
-     * @description Allow public read access to daily words.  Writes are not yet secured.
+     * @description Allows public read access to daily words, but prevents modification.
      * @path /dailyWords/{dailyWordDate}
-     * @allow (get, list) - Any user can read the daily word.
-     * @deny (create, update, delete) - No user can modify the daily word without authentication (TODO).
-     * @principle Allows public read access while restricting writes.
+     * @allow (get) Any user can read the daily word.
+     * @allow (list) Any user can list daily words.
+     * @deny (create) No user can create daily words through the client.
+     * @deny (update) No user can update daily words through the client.
+     * @deny (delete) No user can delete daily words through the client.
+     * @principle Provides public read access while restricting write access.
      */
     match /dailyWords/{dailyWordDate} {
       allow get: if true;
       allow list: if true;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
 
     /**
-     * @description Allow public read access to the word list. Writes are not yet secured.
+     * @description Allows public read access to the word list, but prevents modification.
      * @path /wordList/{word}
-     * @allow (get, list) - Any user can read the word list.
-     * @deny (create, update, delete) - No user can modify the word list without authentication (TODO).
-     * @principle Allows public read access while restricting writes.
+     * @allow (get) Any user can read from the word list.
+     * @allow (list) Any user can list words.
+     * @deny (create) No user can create new words through the client.
+     * @deny (update) No user can update words through the client.
+     * @deny (delete) No user can delete words through the client.
+     * @principle Provides public read access while restricting write access.
      */
     match /wordList/{word} {
       allow get: if true;
       allow list: if true;
-      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
-      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
     }
   }
 }
