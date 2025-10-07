@@ -11,6 +11,7 @@ import { PieChart, Delete } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase, useUser } from '@/firebase';
 import { setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 
 // --- CONSTANTS ---
 const MAX_GUESSES = 6;
@@ -249,7 +250,7 @@ const Header: FC<{ stats: PlayerStats | null }> = memo(({ stats }) => (
 // --- MAIN GAME COMPONENT ---
 export default function WordleGame() {
     const { toast } = useToast();
-    const { firestore } = useFirebase();
+    const { firestore, auth } = useFirebase();
     const { user, isUserLoading } = useUser();
     
     const [dailyWord, setDailyWord] = useState('');
@@ -265,9 +266,16 @@ export default function WordleGame() {
 
     const currentRowIndex = useMemo(() => guesses.length, [guesses]);
 
+    // Effect for anonymous sign-in
+    useEffect(() => {
+        if (!isUserLoading && !user && auth) {
+            initiateAnonymousSignIn(auth);
+        }
+    }, [isUserLoading, user, auth]);
+
      // --- DATA LOADING & SAVING ---
     useEffect(() => {
-        if (isUserLoading || !firestore) return;
+        if (!firestore) return;
 
         const db = firestore;
 
@@ -280,27 +288,40 @@ export default function WordleGame() {
 
             if (dailyWordSnap.exists()) {
                 setDailyWord(dailyWordSnap.data().word.toUpperCase());
-            } else {
-                // Fallback or generate new word
-                console.warn("No daily word found in Firestore for today. Using fallback.");
-                const fallbackIndex = Math.floor(Math.random() * FALLBACK_WORDLIST.length);
-                const fallbackWord = FALLBACK_WORDLIST[fallbackIndex].toUpperCase();
-                setDailyWord(fallbackWord);
-                // Optionally, save this new word to Firestore
-                setDocumentNonBlocking(dailyWordRef, { word: fallbackWord, date: today }, { merge: true });
+                return true;
             }
+            return false;
+        };
+        
+        const createDailyWord = async () => {
+            console.warn("No daily word found in Firestore for today. Using fallback.");
+            const fallbackIndex = Math.floor(Math.random() * FALLBACK_WORDLIST.length);
+            const fallbackWord = FALLBACK_WORDLIST[fallbackIndex].toUpperCase();
+            const today = getWordDateString(getUTCDate());
+            const dailyWordRef = doc(db, 'dailyWords', today);
+            
+            setDailyWord(fallbackWord);
+            setDocumentNonBlocking(dailyWordRef, { word: fallbackWord, date: today }, { merge: true });
         };
 
+
         const loadValidGuesses = async () => {
-             // For now, using fallback. In a real app, you might fetch this from Firestore
-             // or a different source if it's very large.
+             // For now, using fallback.
              setValidGuesses(FALLBACK_VALID_GUESSES);
         };
 
-        getDailyWord();
+        const initializeWord = async () => {
+            const wordExists = await getDailyWord();
+            // Create word only if it doesn't exist and user is logged in
+            if (!wordExists && user) {
+                createDailyWord();
+            }
+        }
+
+        initializeWord();
         loadValidGuesses();
 
-    }, [isUserLoading, firestore]);
+    }, [firestore, user]);
 
     useEffect(() => {
         if (!user || status !== 'loading' || !dailyWord || isUserLoading) return;
