@@ -198,11 +198,12 @@ const StatsModal: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode:
   );
 });
 
-const Header: FC<{ 
-  isHardMode: boolean; 
+const Header: FC<{
+  isHardMode: boolean;
+  onHardModeToggle: (checked: boolean) => void;
   onHint: () => void;
   hintsRemaining: number;
-}> = memo(({ isHardMode, onHint, hintsRemaining }) => (
+}> = memo(({ isHardMode, onHardModeToggle, onHint, hintsRemaining }) => (
   <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
      <div className="flex-1">
        {/* Empty div for spacing */}
@@ -225,7 +226,7 @@ const Header: FC<{
             <PieChart className="h-6 w-6" />
           </Button>
         </DialogTrigger>
-        <StatsModal onHardModeToggle={() => {}} isHardMode={isHardMode} />
+        <StatsModal onHardModeToggle={onHardModeToggle} isHardMode={isHardMode} />
       </Dialog>
     </div>
   </header>
@@ -683,7 +684,7 @@ export default function WordleGame() {
       </div>
        <div className="flex justify-center py-8">
         <Image
-          src="/gamingSYNC.png"
+          src="/GamingSYNC.png"
           alt="Gaming SYNC Logo"
           width={150}
           height={150}
