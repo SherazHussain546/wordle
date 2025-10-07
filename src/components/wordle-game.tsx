@@ -19,6 +19,7 @@ import { WORDLIST } from '@/lib/words';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import AdBanner from './ad-banner';
+import Logo from './logo';
 
 // --- CONSTANTS ---
 const MAX_GUESSES = 6;
@@ -681,6 +682,9 @@ export default function WordleGame() {
       </div>
       <div className="px-2 pb-4">
         <Instructions />
+      </div>
+       <div className="py-8 bg-[#1a1a1a]">
+        <Logo />
       </div>
       <GameOverDialog
         isOpen={isGameOver}
