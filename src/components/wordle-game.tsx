@@ -684,7 +684,9 @@ export default function WordleGame() {
         <Instructions />
       </div>
        <div className="py-8 bg-[#1a1a1a]">
-        <Logo />
+        <a href="https://synctech.ie/gamehub" target="_blank" rel="noopener noreferrer">
+          <Logo />
+        </a>
       </div>
       <GameOverDialog
         isOpen={isGameOver}
