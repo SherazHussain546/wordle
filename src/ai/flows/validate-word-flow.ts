@@ -13,7 +13,7 @@ export async function validateWord(word: string): Promise<boolean> {
 
 const prompt = ai.definePrompt({
   name: 'validateWordPrompt',
-  model: googleAI.model('gemini-2.5-flash-preview'),
+  model: googleAI.model('gemini-1.5-flash-preview'),
   input: { schema: ValidateWordInputSchema },
   output: { schema: ValidateWordOutputSchema },
   prompt: `You are an English dictionary expert. Your task is to determine if a given 5-letter string is a real, common English word.
