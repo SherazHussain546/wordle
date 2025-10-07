@@ -243,6 +243,22 @@ const GameOverDialog: FC<GameOverDialogProps> = ({
   </Dialog>
 );
 
+const GameFooter: FC = memo(() => (
+  <footer className="w-full text-center p-4">
+    <p className="text-sm text-muted-foreground">
+      Powered by{' '}
+      <a
+        href="https://synctech.ie"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-medium text-primary hover:underline underline-offset-4"
+      >
+        SYNC TECH
+      </a>
+    </p>
+  </footer>
+));
+
 // --- MAIN GAME COMPONENT ---
 export default function WordleGame() {
   const { toast } = useToast();
@@ -443,6 +459,7 @@ export default function WordleGame() {
           </div>
         )}
       <Keyboard onKeyPress={onKeyPress} keyColors={keyColors} />
+      <GameFooter />
       <GameOverDialog
         isOpen={isGameOver}
         status={status as 'won' | 'lost'}
