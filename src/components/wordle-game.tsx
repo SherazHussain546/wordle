@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { PieChart, Delete, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
