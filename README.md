@@ -30,6 +30,7 @@ This project is built with a modern, production-ready tech stack:
 *   **Styling:** Tailwind CSS & shadcn/ui
 *   **Deployment:** Ready for Netlify
 
+<<<<<<< HEAD
 ## 部署到Netlify
 
 Follow this step-by-step guide to deploy your WordleMaster site to Netlify.
@@ -102,6 +103,8 @@ Click the **"Deploy site"** button. Netlify will start building your project. Yo
 
 You can customize the domain name later in your site's settings on Netlify.
 
+=======
+>>>>>>> 9b58beb12e5b6c5067840f6e4d8c5c2431b3ab7d
 ## ✨ Powered By
 
 [![SYNC TECH](https://www.synctech.ie/assets/logo-light.svg)](https://synctech.ie)
