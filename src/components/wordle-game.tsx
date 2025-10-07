@@ -265,24 +265,26 @@ const GameFooter: FC = memo(() => (
 
 const Instructions: FC = memo(() => (
   <div className="w-full text-left p-4 sm:p-6 bg-card rounded-lg my-4 border">
-    <h2 className="text-xl font-bold mb-3 text-center">How to Play</h2>
-    <p className="text-muted-foreground mb-4 text-center">Guess the hidden word in 6 tries.</p>
-    <ul className="space-y-3 list-disc list-inside text-foreground">
-      <li>Each guess must be a valid 5-letter word. Hit the enter button to submit.</li>
-      <li>After each guess, the color of the tiles will change to show how close your guess was to the word.</li>
+    <h2 className="text-xl font-bold mb-2 text-center">How To Play</h2>
+    <p className="text-muted-foreground mb-4 text-center">Guess the Wordle in 6 tries.</p>
+    <ul className="space-y-2 mb-4 text-foreground">
+      <li>Each guess must be a valid 5-letter word.</li>
+      <li>The color of the tiles will change to show how close your guess was to the word.</li>
     </ul>
-    <div className="flex flex-col sm:flex-row justify-around my-4 gap-4">
-        <div className="flex items-center gap-2">
+
+    <h3 className="font-semibold mb-3 border-t pt-4">Examples</h3>
+    <div className="space-y-3">
+        <div className="flex items-center gap-3">
             <div className="w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg bg-primary text-primary-foreground border-2 border-primary">W</div>
-            <p className="text-sm flex-1"><strong className="font-semibold">Green:</strong> The letter is in the word and in the correct spot.</p>
+            <p className="text-sm flex-1"><strong className="font-semibold">W</strong> is in the word and in the correct spot.</p>
         </div>
-        <div className="flex items-center gap-2">
-            <div className="w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg bg-accent text-accent-foreground border-2 border-accent">P</div>
-            <p className="text-sm flex-1"><strong className="font-semibold">Yellow:</strong> The letter is in the word but in the wrong spot.</p>
+        <div className="flex items-center gap-3">
+            <div className="w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg bg-accent text-accent-foreground border-2 border-accent">I</div>
+            <p className="text-sm flex-1"><strong className="font-semibold">I</strong> is in the word but in the wrong spot.</p>
         </div>
-        <div className="flex items-center gap-2">
-            <div className="w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg bg-muted-foreground/80 text-white border-2 border-muted-foreground/80">V</div>
-            <p className="text-sm flex-1"><strong className="font-semibold">Gray:</strong> The letter is not in the word in any spot.</p>
+        <div className="flex items-center gap-3">
+            <div className="w-8 h-8 flex items-center justify-center rounded-md font-bold text-lg bg-muted-foreground/80 text-white border-2 border-muted-foreground/80">U</div>
+            <p className="text-sm flex-1"><strong className="font-semibold">U</strong> is not in the word in any spot.</p>
         </div>
     </div>
   </div>
