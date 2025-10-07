@@ -203,13 +203,13 @@ const Header: FC<{
   hintsRemaining: number;
 }> = memo(({ isHardMode, onHint, hintsRemaining }) => (
   <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
-     <div className="w-10">
+     <div className="flex-1">
        {/* Empty div for spacing */}
      </div>
-    <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase">
+    <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase flex-1 text-center">
       Wordle<span className="text-primary">Master</span>
     </h1>
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1 flex-1 justify-end">
       <Button variant="ghost" size="icon" onClick={onHint} disabled={hintsRemaining === 0}>
         <Lightbulb className="h-6 w-6" />
         {hintsRemaining > 0 && (
