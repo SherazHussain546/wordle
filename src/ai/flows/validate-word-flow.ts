@@ -1,7 +1,6 @@
 'use server';
 
 import { ai } from '@/ai/genkit';
-import { googleAI } from '@genkit-ai/google-genai';
 import { z } from 'zod';
 
 const ValidateWordInputSchema = z.string().length(5).describe('A 5-letter word to validate.');
@@ -13,7 +12,6 @@ export async function validateWord(word: string): Promise<boolean> {
 
 const prompt = ai.definePrompt({
   name: 'validateWordPrompt',
-  model: googleAI.model('gemini-1.5-flash-preview'),
   input: { schema: ValidateWordInputSchema },
   output: { schema: ValidateWordOutputSchema },
   prompt: `You are an English dictionary expert. Your task is to determine if a given 5-letter string is a real, common English word.
