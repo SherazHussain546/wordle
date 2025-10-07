@@ -12,7 +12,8 @@ import {
   DialogDescription,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { PieChart, Delete, Loader2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { PieChart, Delete, Loader2, HelpCircle, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WORDLIST } from '@/lib/words';
 import Image from 'next/image';
@@ -197,20 +198,45 @@ const StatsModal: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode:
 
 const Header: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode: boolean; }> = memo(({ onHardModeToggle, isHardMode }) => (
     <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
-    <div className="w-10"></div>
+    <div className="w-10">
+       <Image src="/gamingSYNC.png" alt="WordleMaster Logo" width={40} height={40} />
+    </div>
     <div className="flex items-center gap-2">
       <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase">
         Wordle<span className="text-primary">Master</span>
       </h1>
     </div>
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <PieChart className="h-6 w-6" />
-        </Button>
-      </DialogTrigger>
-      <StatsModal onHardModeToggle={onHardModeToggle} isHardMode={isHardMode} />
-    </Dialog>
+    <div className="flex items-center gap-1">
+      <Button variant="ghost" size="icon">
+        <Lightbulb className="h-6 w-6" />
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <HelpCircle className="h-6 w-6" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onSelect={() => document.getElementById('how-to-play')?.scrollIntoView({ behavior: 'smooth' })}>
+            How to Play
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => document.getElementById('tips-and-tricks')?.scrollIntoView({ behavior: 'smooth' })}>
+            Tips & Tricks
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => document.getElementById('glossary')?.scrollIntoView({ behavior: 'smooth' })}>
+            Glossary
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <PieChart className="h-6 w-6" />
+          </Button>
+        </DialogTrigger>
+        <StatsModal onHardModeToggle={onHardModeToggle} isHardMode={isHardMode} />
+      </Dialog>
+    </div>
   </header>
 ));
 
@@ -279,7 +305,7 @@ const GameFooter: FC = memo(() => (
 
 const Instructions: FC = memo(() => (
     <div className="w-full text-left p-4 sm:p-6 bg-card rounded-lg my-4 border">
-        <h2 className="text-xl font-bold mb-4 text-center">How To Play</h2>
+        <h2 id="how-to-play" className="text-xl font-bold mb-4 text-center scroll-mt-20">How To Play</h2>
         <p className="text-muted-foreground mb-4 text-center">Guess the Wordle in 6 tries.</p>
         <ul className="space-y-3 mb-6 text-foreground">
             <li>Each guess must be a valid 5-letter word.</li>
@@ -314,7 +340,7 @@ const Instructions: FC = memo(() => (
             </div>
         </div>
 
-        <h2 className="text-xl font-bold mt-8 mb-4 text-center border-t pt-6">Tips &amp; Tricks</h2>
+        <h2 id="tips-and-tricks" className="text-xl font-bold mt-8 mb-4 text-center border-t pt-6 scroll-mt-20">Tips &amp; Tricks</h2>
         <div className="space-y-4 text-sm text-foreground">
             <div className="p-4 rounded-lg border bg-background">
                 <h4 className="font-semibold mb-2">Start with a word that has a lot of vowels.</h4>
@@ -334,7 +360,7 @@ const Instructions: FC = memo(() => (
             </div>
         </div>
         
-        <h2 className="text-xl font-bold mt-8 mb-4 text-center border-t pt-6">Glossary</h2>
+        <h2 id="glossary" className="text-xl font-bold mt-8 mb-4 text-center border-t pt-6 scroll-mt-20">Glossary</h2>
         <div className="space-y-4 text-sm text-foreground">
             <div className="p-4 rounded-lg border bg-background">
                 <h4 className="font-semibold mb-2">Ace</h4>
@@ -485,19 +511,24 @@ export default function WordleGame() {
       const lastGuess = guesses[guesses.length - 1];
       
       // Check for correct letters (green)
-      for(let i=0; i<WORD_LENGTH; i++) {
-        if(lastEval[i] === 'correct' && upperCaseGuess[i] !== lastGuess[i]) {
-          toast({ title: 'Hard Mode', description: `Letter ${lastGuess[i]} must be in position ${i+1}`, variant: 'destructive', duration: 2000 });
-          return;
+      if (lastEval) {
+        for(let i=0; i<WORD_LENGTH; i++) {
+          if(lastEval[i] === 'correct' && upperCaseGuess[i] !== lastGuess[i]) {
+            toast({ title: 'Hard Mode', description: `Letter ${lastGuess[i]} must be in position ${i+1}`, variant: 'destructive', duration: 2000 });
+            return;
+          }
         }
       }
 
+
       // Check for present letters (yellow)
-      const presentLetters = lastGuess.split('').filter((_,i) => lastEval[i] === 'present');
-      for(const letter of presentLetters) {
-        if(!upperCaseGuess.includes(letter)) {
-          toast({ title: 'Hard Mode', description: `Guess must contain ${letter}`, variant: 'destructive', duration: 2000 });
-          return;
+      if (lastEval) {
+        const presentLetters = lastGuess.split('').filter((_,i) => lastEval[i] === 'present');
+        for(const letter of presentLetters) {
+          if(!upperCaseGuess.includes(letter)) {
+            toast({ title: 'Hard Mode', description: `Guess must contain ${letter}`, variant: 'destructive', duration: 2000 });
+            return;
+          }
         }
       }
     }
