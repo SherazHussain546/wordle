@@ -23,6 +23,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 const MAX_GUESSES = 6;
 const WORD_LENGTH = 5;
 const FLIP_ANIMATION_DURATION = 500;
+const MAX_HINTS = 3;
 
 // --- TYPE DEFINITIONS ---
 type LetterState = 'correct' | 'present' | 'absent' | 'empty' | 'tbd';
@@ -195,17 +196,39 @@ const StatsModal: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode:
   );
 });
 
-const Header: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode: boolean; }> = memo(({ onHardModeToggle, isHardMode }) => (
+const Header: FC<{ 
+  onHardModeToggle: (checked: boolean) => void; 
+  isHardMode: boolean; 
+  onHint: () => void;
+  hintsRemaining: number;
+}> = memo(({ onHardModeToggle, isHardMode, onHint, hintsRemaining }) => (
   <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
-    <div className="w-10">
-      {/* Empty div for spacing */}
-    </div>
+     <div className="w-10">
+       {/* Empty div for spacing */}
+     </div>
     <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase">
       Wordle<span className="text-primary">Master</span>
     </h1>
     <div className="flex items-center gap-1">
-      <Button variant="ghost" size="icon">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <HelpCircle className="h-6 w-6" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onSelect={() => document.getElementById('how-to-play')?.scrollIntoView({ behavior: 'smooth' })}>How to Play</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => document.getElementById('tips-and-tricks')?.scrollIntoView({ behavior: 'smooth' })}>Tips & Tricks</DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => document.getElementById('glossary')?.scrollIntoView({ behavior: 'smooth' })}>Glossary</DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Button variant="ghost" size="icon" onClick={onHint} disabled={hintsRemaining === 0}>
         <Lightbulb className="h-6 w-6" />
+        {hintsRemaining > 0 && (
+          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+            {hintsRemaining}
+          </span>
+        )}
       </Button>
       <Dialog>
         <DialogTrigger asChild>
@@ -383,6 +406,7 @@ export default function WordleGame() {
   const [validWords, setValidWords] = useState(new Set(WORDLIST));
   const [isVerifying, setIsVerifying] = useState(false);
   const [isHardMode, setIsHardMode] = useState(false);
+  const [hintsUsed, setHintsUsed] = useState(0);
   
   const [isClient, setIsClient] = useState(false);
   useEffect(() => {
@@ -400,6 +424,7 @@ export default function WordleGame() {
     setEvaluations([]);
     setKeyColors({});
     setDefinition(null);
+    setHintsUsed(0);
   }, []);
 
   useEffect(() => {
@@ -594,7 +619,37 @@ export default function WordleGame() {
         title: `Hard Mode ${checked ? 'Enabled' : 'Disabled'}`,
         description: checked ? "Good luck!" : "",
     });
-  }
+  };
+
+  const handleHint = () => {
+    if (status !== 'playing' || hintsUsed >= MAX_HINTS) {
+        toast({ title: "No hints remaining", variant: "destructive" });
+        return;
+    }
+
+    const foundLetters = new Set<string>();
+    Object.entries(keyColors).forEach(([letter, state]) => {
+        if (state === 'correct' || state === 'present') {
+            foundLetters.add(letter);
+        }
+    });
+
+    const wordLetters = dailyWord.split('');
+    const hintLetter = wordLetters.find(letter => !foundLetters.has(letter));
+    
+    if (hintLetter) {
+        toast({
+            title: "Hint",
+            description: `The word contains the letter "${hintLetter}".`,
+        });
+        setHintsUsed(prev => prev + 1);
+    } else {
+        toast({
+            title: "No more hints available",
+            description: "You've already found all the letters!",
+        });
+    }
+  };
 
   if (status === 'loading' || !isClient) {
     return (
@@ -606,7 +661,7 @@ export default function WordleGame() {
 
   return (
     <div className="w-full max-w-md mx-auto flex flex-col h-full bg-background">
-      <Header onHardModeToggle={handleHardModeToggle} isHardMode={isHardMode} />
+      <Header onHardModeToggle={handleHardModeToggle} isHardMode={isHardMode} onHint={handleHint} hintsRemaining={MAX_HINTS - hintsUsed} />
       <div className="w-full flex-grow flex flex-col px-2">
         <GameGrid guesses={guesses} currentGuess={currentGuess} evaluations={evaluations} currentRowIndex={currentRowIndex} />
       </div>
