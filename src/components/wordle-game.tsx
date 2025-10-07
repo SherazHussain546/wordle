@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, FC, memo } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,8 +13,8 @@ import {
 } from '@/components/ui/dialog';
 import { PieChart, Delete, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useFirebase } from '@/firebase';
 import { getDefinition, WordDefinitionOutput } from '@/ai/flows/dictionary-flow';
+import { WORDLIST } from '@/lib/words';
 
 // --- CONSTANTS ---
 const MAX_GUESSES = 6;
@@ -29,13 +28,8 @@ type KeyColors = { [key: string]: LetterState };
 type GameStatus = 'loading' | 'playing' | 'won' | 'lost';
 
 // --- HELPER FUNCTIONS ---
-const getUTCDate = () => {
-  const d = new Date();
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
-};
-
-const getWordDateString = (date: Date) => {
-  return date.toISOString().split('T')[0];
+const getDailyWord = () => {
+  return WORDLIST[Math.floor(Math.random() * WORDLIST.length)];
 };
 
 // --- SUB-COMPONENTS ---
@@ -137,7 +131,7 @@ const Keyboard: FC<{ onKeyPress: (key: string) => void; keyColors: KeyColors }> 
   ];
 
   const getKeyClass = (key: string) => {
-    const state = keyColors[key];
+    const state = keyColors[key.toUpperCase()];
     const baseClasses = 'border-2';
     switch (state) {
       case 'correct':
@@ -180,7 +174,7 @@ const StatsModal: FC = memo(() => {
       <DialogHeader>
         <DialogTitle className="text-center text-2xl font-bold">Statistics</DialogTitle>
       </DialogHeader>
-      <div className="text-center text-muted-foreground">Player stats are not being tracked in this version.</div>
+      <div className="text-center text-muted-foreground">Player stats are not tracked in this version.</div>
     </DialogContent>
   );
 });
@@ -252,13 +246,12 @@ const GameOverDialog: FC<GameOverDialogProps> = ({
 // --- MAIN GAME COMPONENT ---
 export default function WordleGame() {
   const { toast } = useToast();
-  const { firestore } = useFirebase();
-
+  
   const [dailyWord, setDailyWord] = useState('');
   const [isGameOver, setIsGameOver] = useState(false);
   const [definition, setDefinition] = useState<string | null>(null);
   const [isDefinitionLoading, setIsDefinitionLoading] = useState(false);
-  const [status, setStatus] = useState<GameStatus>('loading');
+  const [status, setStatus] = useState<GameStatus>('playing');
   const [guesses, setGuesses] = useState<string[]>([]);
   const [currentGuess, setCurrentGuess] = useState('');
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
@@ -266,48 +259,20 @@ export default function WordleGame() {
 
   const currentRowIndex = useMemo(() => guesses.length, [guesses]);
 
-  const fetchDailyWord = useCallback(async () => {
-    if (!firestore) return;
-    setStatus('loading');
-
-    const today = getWordDateString(getUTCDate());
-    const dailyWordRef = doc(firestore, 'dailyWords', today);
-    try {
-      const dailyWordSnap = await getDoc(dailyWordRef);
-      if (dailyWordSnap.exists()) {
-        const word = dailyWordSnap.data().word.toUpperCase();
-        setDailyWord(word);
-        setStatus('playing');
-      } else {
-        toast({
-          title: 'No Word for Today',
-          description: "The administrator needs to add a word for today's date.",
-          variant: 'destructive',
-        });
-        setStatus('lost'); // Or some other terminal state
-      }
-    } catch (error) {
-      console.error('Error fetching daily word:', error);
-      toast({ title: 'Error Fetching Word', description: 'Could not load the daily word. Please refresh.', variant: 'destructive' });
-      setStatus('lost');
-    }
-  }, [firestore, toast]);
-
-  useEffect(() => {
-    if (firestore) {
-      fetchDailyWord();
-    }
-  }, [firestore, fetchDailyWord]);
-
-  const resetGame = useCallback(() => {
+  const startNewGame = useCallback(() => {
+    setDailyWord(getDailyWord());
+    setStatus('playing');
     setIsGameOver(false);
     setGuesses([]);
     setCurrentGuess('');
     setEvaluations([]);
     setKeyColors({});
     setDefinition(null);
-    fetchDailyWord();
-  }, [fetchDailyWord]);
+  }, []);
+
+  useEffect(() => {
+    startNewGame();
+  }, [startNewGame]);
 
   const handleGameOver = useCallback(
     async (finalStatus: 'won' | 'lost') => {
@@ -332,7 +297,7 @@ export default function WordleGame() {
     allGuesses.forEach((guess, i) => {
       const evaluation = allEvals[i];
       guess.split('').forEach((letter, j) => {
-        const key = letter.toLowerCase();
+        const key = letter.toUpperCase();
         const currentState = newKeyColors[key];
         const newState = evaluation[j];
         if (currentState === 'correct') return;
@@ -378,18 +343,9 @@ export default function WordleGame() {
       toast({ title: 'Not enough letters', variant: 'destructive', duration: 1000 });
       return;
     }
-    if (!firestore) return;
-
-    const wordListRef = doc(firestore, 'wordList', currentGuess.toLowerCase());
-    try {
-      const wordListSnap = await getDoc(wordListRef);
-      if (!wordListSnap.exists()) {
-        toast({ title: 'Not in word list', variant: 'destructive', duration: 1000 });
-        return;
-      }
-    } catch (error) {
-      console.error('Error validating word:', error);
-      toast({ title: 'Validation Error', description: 'Could not check if word is valid.', variant: 'destructive', duration: 1000 });
+    
+    if (!WORDLIST.includes(currentGuess.toUpperCase())) {
+      toast({ title: 'Not in word list', variant: 'destructive', duration: 1000 });
       return;
     }
 
@@ -410,7 +366,7 @@ export default function WordleGame() {
         handleGameOver(isWin ? 'won' : 'lost');
       }, FLIP_ANIMATION_DURATION + WORD_LENGTH * 100);
     }
-  }, [currentGuess, dailyWord, firestore, guesses, evaluations, toast, handleGameOver]);
+  }, [currentGuess, dailyWord, guesses, evaluations, toast, handleGameOver]);
 
   const onKeyPress = useCallback(
     (key: string) => {
@@ -435,7 +391,7 @@ export default function WordleGame() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onKeyPress]);
 
-  if (status === 'loading' || !dailyWord) {
+  if (!dailyWord) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -456,7 +412,7 @@ export default function WordleGame() {
         dailyWord={dailyWord}
         definition={definition}
         isLoadingDefinition={isDefinitionLoading}
-        onPlayAgain={resetGame}
+        onPlayAgain={startNewGame}
         onClose={() => setIsGameOver(false)}
       />
     </div>
