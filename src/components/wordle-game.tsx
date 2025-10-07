@@ -682,15 +682,6 @@ export default function WordleGame() {
       <div className="px-2 pb-4">
         <Instructions />
       </div>
-       <div className="flex justify-center py-8">
-        <Image
-          src="/GamingSYNC.png"
-          alt="Gaming SYNC Logo"
-          width={150}
-          height={150}
-          className="rounded-full"
-        />
-      </div>
       <GameOverDialog
         isOpen={isGameOver}
         status={status as 'won' | 'lost'}
