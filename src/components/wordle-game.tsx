@@ -184,7 +184,6 @@ const Header: FC = memo(() => (
   <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
     <div className="w-10"></div>
     <div className="flex items-center gap-2">
-      <Image src="/gamingSYNC.png" alt="WordleMaster Logo" width={32} height={32} />
       <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase">
         Wordle<span className="text-primary">Master</span>
       </h1>
