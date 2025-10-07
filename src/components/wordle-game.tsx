@@ -73,14 +73,14 @@ const Tile: FC<TileProps> = memo(({ letter, state, isRevealing, isCompleted, ind
       correct: 'bg-primary border-primary text-primary-foreground',
       present: 'bg-accent border-accent text-accent-foreground',
       absent: 'bg-muted-foreground/80 border-muted-foreground/80 text-white',
-      empty: 'bg-transparent border-border',
-      tbd: 'bg-transparent border-border text-foreground',
+      empty: 'bg-transparent border-muted-foreground/20',
+      tbd: 'bg-transparent border-muted-foreground/50 text-foreground',
     };
 
     return (
         <div
             className={cn(
-                "flex items-center justify-center text-3xl font-bold uppercase aspect-square rounded-md transition-all duration-300",
+                "flex items-center justify-center text-3xl font-bold uppercase aspect-square rounded-md transition-all duration-300 border-2",
                 isRevealing && "animate-flip",
                 isCompleted ? stateClasses[state] : stateClasses[state === 'empty' ? 'empty' : 'tbd'],
             )}
