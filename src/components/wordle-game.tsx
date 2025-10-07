@@ -210,18 +210,6 @@ const Header: FC<{
       Wordle<span className="text-primary">Master</span>
     </h1>
     <div className="flex items-center gap-1">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
-            <HelpCircle className="h-6 w-6" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem onSelect={() => document.getElementById('how-to-play')?.scrollIntoView({ behavior: 'smooth' })}>How to Play</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => document.getElementById('tips-and-tricks')?.scrollIntoView({ behavior: 'smooth' })}>Tips & Tricks</DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => document.getElementById('glossary')?.scrollIntoView({ behavior: 'smooth' })}>Glossary</DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
       <Button variant="ghost" size="icon" onClick={onHint} disabled={hintsRemaining === 0}>
         <Lightbulb className="h-6 w-6" />
         {hintsRemaining > 0 && (
