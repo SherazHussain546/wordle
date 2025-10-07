@@ -183,7 +183,7 @@ const Header: FC = memo(() => (
   <header className="flex items-center justify-between w-full p-2 border-b shrink-0">
     <div className="w-10"></div>
     <h1 className="text-2xl sm:text-3xl font-bold tracking-wider uppercase">
-      Word<span className="text-primary">Master</span>
+      Wordle<span className="text-primary">Master</span>
     </h1>
     <Dialog>
       <DialogTrigger asChild>
