@@ -42,6 +42,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full" style={{scrollBehavior:'smooth'}}>
       <head>
+        <meta name="google-site-verification" content="-2YVuqfnqiY5zPpoHylxys5gnIrFexTBklppdeVE4Qw" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
