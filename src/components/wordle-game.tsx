@@ -219,7 +219,7 @@ const Header: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode: boo
             How to Play
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => document.getElementById('tips-and-tricks')?.scrollIntoView({ behavior: 'smooth' })}>
-            Tips &amp; Tricks
+            Tips & Tricks
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => document.getElementById('glossary')?.scrollIntoView({ behavior: 'smooth' })}>
             Glossary
