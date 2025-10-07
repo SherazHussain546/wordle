@@ -16,7 +16,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { PieChart, Delete, Loader2, HelpCircle, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WORDLIST } from '@/lib/words';
-import Image from 'next/image';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -215,23 +214,14 @@ const Header: FC<{ onHardModeToggle: (checked: boolean) => void; isHardMode: boo
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem onSelect={(e) => {
-            e.preventDefault();
-            document.getElementById('how-to-play')?.scrollIntoView({ behavior: 'smooth' });
-          }}>
-            How to Play
+          <DropdownMenuItem>
+            <a href="#how-to-play">How to Play</a>
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={(e) => {
-            e.preventDefault();
-            document.getElementById('tips-and-tricks')?.scrollIntoView({ behavior: 'smooth' });
-          }}>
-            Tips & Tricks
+          <DropdownMenuItem>
+            <a href="#tips-and-tricks">Tips & Tricks</a>
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={(e) => {
-            e.preventDefault();
-            document.getElementById('glossary')?.scrollIntoView({ behavior: 'smooth' });
-          }}>
-            Glossary
+          <DropdownMenuItem>
+            <a href="#glossary">Glossary</a>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
