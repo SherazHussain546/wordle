@@ -1,17 +1,18 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, FC, memo } from 'react';
-import { doc, getDoc, setDoc, runTransaction, getFirestore, collection, writeBatch, query, where, limit } from 'firebase/firestore';
+import { doc, getDoc, setDoc, runTransaction, getFirestore } from 'firebase/firestore';
 import { type User } from 'firebase/auth';
-import { WORDLIST as FALLBACK_WORDLIST, VALID_GUESSES as FALLBACK_VALID_GUESSES } from '@/lib/words';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { PieChart, Delete } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { useFirebase, useUser } from '@/firebase';
-import { setDocumentNonBlocking, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { WORDLIST as FALLBACK_WORDLIST } from '@/lib/words';
+
 
 // --- CONSTANTS ---
 const MAX_GUESSES = 6;
@@ -78,6 +79,7 @@ const Tile: FC<TileProps> = memo(({ letter, state, isRevealing, isCompleted, ind
                 "flex items-center justify-center text-2xl sm:text-3xl font-bold uppercase aspect-square rounded-md transition-all duration-300 border-2",
                 isRevealing && "animate-flip",
                 isCompleted ? stateClasses[state] : stateClasses[state === 'empty' ? 'empty' : 'tbd'],
+                stateClasses[state]
             )}
             style={tileStyle}
         >
@@ -254,7 +256,6 @@ export default function WordleGame() {
     const { user, isUserLoading } = useUser();
     
     const [dailyWord, setDailyWord] = useState('');
-    const [validGuesses, setValidGuesses] = useState(new Set<string>());
     const [wordDate, setWordDate] = useState(getWordDateString(getUTCDate()));
 
     const [status, setStatus] = useState<GameStatus>('loading');
@@ -294,7 +295,6 @@ export default function WordleGame() {
         };
         
         const createDailyWord = async () => {
-            console.warn("No daily word found in Firestore for today. Using fallback.");
             const fallbackIndex = Math.floor(Math.random() * FALLBACK_WORDLIST.length);
             const fallbackWord = FALLBACK_WORDLIST[fallbackIndex].toUpperCase();
             const today = getWordDateString(getUTCDate());
@@ -305,23 +305,20 @@ export default function WordleGame() {
         };
 
 
-        const loadValidGuesses = async () => {
-             // For now, using fallback.
-             setValidGuesses(FALLBACK_VALID_GUESSES);
-        };
-
         const initializeWord = async () => {
+            if (isUserLoading) return; // Wait until auth state is resolved
             const wordExists = await getDailyWord();
-            // Create word only if it doesn't exist and user is logged in
-            if (!wordExists && user) {
+            if (!wordExists && user) { // Only create if logged in and word doesn't exist
                 createDailyWord();
+            } else if (!wordExists && !user) {
+                // Handle case where user is not logged in yet, maybe retry or use a local fallback
+                console.log("Waiting for user to login to potentially create daily word...");
             }
         }
 
         initializeWord();
-        loadValidGuesses();
 
-    }, [firestore, user]);
+    }, [firestore, user, isUserLoading]);
 
     useEffect(() => {
         if (!user || status !== 'loading' || !dailyWord || isUserLoading) return;
@@ -423,7 +420,12 @@ export default function WordleGame() {
             return;
         }
 
-        if (!validGuesses.has(currentGuess.toLowerCase())) {
+        if (!firestore) return;
+
+        const wordListRef = doc(firestore, 'wordList', currentGuess.toLowerCase());
+        const wordListSnap = await getDoc(wordListRef);
+
+        if (!wordListSnap.exists()) {
             toast({ title: "Not in word list", variant: "destructive" });
             return;
         }
@@ -464,7 +466,7 @@ export default function WordleGame() {
             setDocumentNonBlocking(gameDocRef, gameState, { merge: true });
         }
 
-    }, [currentGuess, dailyWord, guesses, evaluations, user, firestore, wordDate, toast, handleGameEnd, validGuesses]);
+    }, [currentGuess, dailyWord, guesses, evaluations, user, firestore, wordDate, toast, handleGameEnd]);
 
     const getEvaluation = (guess: string, solution: string): Evaluation => {
         const solutionLetters = solution.split('');
