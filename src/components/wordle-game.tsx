@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, FC, memo } from 'react';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -679,6 +680,15 @@ export default function WordleGame() {
       </div>
       <div className="px-2 pb-4">
         <Instructions />
+      </div>
+       <div className="flex justify-center py-8">
+        <Image
+          src="/gamingSYNC.png"
+          alt="Gaming SYNC Logo"
+          width={150}
+          height={150}
+          className="rounded-full"
+        />
       </div>
       <GameOverDialog
         isOpen={isGameOver}
