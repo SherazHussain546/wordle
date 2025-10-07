@@ -15,6 +15,9 @@ import {
 import { PieChart, Delete, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WORDLIST } from '@/lib/words';
+import { validateWord } from '@/ai/flows/validate-word-flow';
+import { useAuth, useFirebase, useUser } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 // --- CONSTANTS ---
 const MAX_GUESSES = 6;
@@ -246,19 +249,22 @@ const GameOverDialog: FC<GameOverDialogProps> = ({
 // --- MAIN GAME COMPONENT ---
 export default function WordleGame() {
   const { toast } = useToast();
+  const { firestore } = useFirebase();
+  const { user } = useUser();
+  const auth = useAuth();
   
   const [dailyWord, setDailyWord] = useState('');
   const [isGameOver, setIsGameOver] = useState(false);
   const [definition, setDefinition] = useState<string | null>(null);
   const [isDefinitionLoading, setIsDefinitionLoading] = useState(false);
-  const [status, setStatus] = useState<GameStatus>('playing');
+  const [status, setStatus] = useState<GameStatus>('loading');
   const [guesses, setGuesses] = useState<string[]>([]);
   const [currentGuess, setCurrentGuess] = useState('');
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [keyColors, setKeyColors] = useState<KeyColors>({});
+  const [validWords, setValidWords] = useState(new Set(WORDLIST));
+  const [isVerifying, setIsVerifying] = useState(false);
   
-  // This state is to ensure the component is mounted on the client
-  // before we try to select a word. This prevents hydration mismatches.
   const [isClient, setIsClient] = useState(false);
   useEffect(() => {
     setIsClient(true);
@@ -358,13 +364,36 @@ export default function WordleGame() {
       return;
     }
     
-    if (!WORDLIST.includes(currentGuess.toUpperCase())) {
-      toast({ title: 'Not in word list', variant: 'destructive', duration: 1000 });
-      return;
+    const upperCaseGuess = currentGuess.toUpperCase();
+
+    if (!validWords.has(upperCaseGuess)) {
+      setIsVerifying(true);
+      try {
+        const isValid = await validateWord(upperCaseGuess);
+        if (isValid) {
+          // Add to firestore and local set
+          if (firestore) {
+            const wordRef = doc(firestore, 'wordList', upperCaseGuess);
+            await setDoc(wordRef, { isValidGuess: true });
+          }
+          setValidWords(prev => new Set(prev).add(upperCaseGuess));
+        } else {
+          toast({ title: 'Not in word list', variant: 'destructive', duration: 1000 });
+          setIsVerifying(false);
+          return;
+        }
+      } catch (e) {
+        console.error("Error validating word:", e);
+        toast({ title: 'Could not verify word', variant: 'destructive', duration: 2000 });
+        setIsVerifying(false);
+        return;
+      } finally {
+        setIsVerifying(false);
+      }
     }
 
-    const newGuesses = [...guesses, currentGuess];
-    const evaluation = getEvaluation(currentGuess, dailyWord);
+    const newGuesses = [...guesses, upperCaseGuess];
+    const evaluation = getEvaluation(upperCaseGuess, dailyWord);
     const newEvals = [...evaluations, evaluation];
 
     setGuesses(newGuesses);
@@ -372,7 +401,7 @@ export default function WordleGame() {
     setCurrentGuess('');
     updateKeyColors(newGuesses, newEvals);
 
-    const isWin = currentGuess === dailyWord;
+    const isWin = upperCaseGuess === dailyWord;
     const isLoss = newGuesses.length === MAX_GUESSES && !isWin;
 
     if (isWin || isLoss) {
@@ -380,21 +409,21 @@ export default function WordleGame() {
         handleGameOver(isWin ? 'won' : 'lost');
       }, FLIP_ANIMATION_DURATION + WORD_LENGTH * 100);
     }
-  }, [currentGuess, dailyWord, guesses, evaluations, toast, handleGameOver]);
+  }, [currentGuess, dailyWord, guesses, evaluations, toast, handleGameOver, validWords, firestore]);
 
   const onKeyPress = useCallback(
     (key: string) => {
-      if (status !== 'playing') return;
+      if (status !== 'playing' || isVerifying) return;
 
       if (key === 'enter') {
         processGuess();
       } else if (key === 'del' || key === 'backspace') {
         setCurrentGuess((prev) => prev.slice(0, -1));
       } else if (currentGuess.length < WORD_LENGTH && /^[a-zA-Z]$/.test(key)) {
-        setCurrentGuess((prev) => (prev + key).toUpperCase());
+        setCurrentGuess((prev) => (prev + key));
       }
     },
-    [status, currentGuess, processGuess]
+    [status, currentGuess, processGuess, isVerifying]
   );
 
   useEffect(() => {
@@ -405,7 +434,7 @@ export default function WordleGame() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onKeyPress]);
 
-  if (!dailyWord || !isClient) {
+  if (status === 'loading' || !isClient) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -417,6 +446,12 @@ export default function WordleGame() {
     <div className="w-full max-w-md mx-auto flex flex-col h-full bg-background">
       <Header />
       <div className="w-full flex-grow flex flex-col px-2">
+        {isVerifying && (
+          <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-50">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="ml-2">Verifying word...</p>
+          </div>
+        )}
         <GameGrid guesses={guesses} currentGuess={currentGuess} evaluations={evaluations} currentRowIndex={currentRowIndex} />
       </div>
       <Keyboard onKeyPress={onKeyPress} keyColors={keyColors} />
