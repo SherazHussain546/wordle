@@ -12,7 +12,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="flex h-full w-full flex-col items-center justify-start bg-background">
+    <main className="flex h-screen w-full flex-col items-center justify-start bg-background">
       {isClient ? <WordleGame /> : <LoadingSkeleton />}
     </main>
   );

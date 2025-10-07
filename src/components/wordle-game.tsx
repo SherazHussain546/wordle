@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, FC, memo } from 'react';
 import { initializeApp, type FirebaseOptions } from 'firebase/app';
@@ -154,16 +154,17 @@ const Keyboard: FC<{ onKeyPress: (key: string) => void, keyColors: KeyColors }> 
 
     const getKeyClass = (key: string) => {
         const state = keyColors[key];
+        const baseClasses = 'border-2 text-black';
         switch (state) {
-            case 'correct': return 'bg-primary text-primary-foreground hover:bg-primary/90';
-            case 'present': return 'bg-accent text-accent-foreground hover:bg-accent/90';
-            case 'absent': return 'bg-muted-foreground/80 text-white hover:bg-muted-foreground';
-            default: return 'bg-muted hover:bg-muted/80';
+            case 'correct': return `bg-primary text-primary-foreground hover:bg-primary/90 ${baseClasses} border-primary`;
+            case 'present': return `bg-accent text-accent-foreground hover:bg-accent/90 ${baseClasses} border-accent`;
+            case 'absent': return `bg-muted-foreground/50 text-white hover:bg-muted-foreground/60 ${baseClasses} border-muted-foreground/50`;
+            default: return `bg-muted hover:bg-muted/80 ${baseClasses} border-muted-foreground/20`;
         }
     };
     
     return (
-        <div className="w-full flex flex-col items-center pb-2">
+        <div className="w-full flex flex-col items-center pb-2 pt-1">
             {keyboardLayout.map((row, i) => (
                 <div key={i} className="flex justify-center gap-1 my-0.5 w-full">
                     {row.map((key) => (
@@ -171,7 +172,7 @@ const Keyboard: FC<{ onKeyPress: (key: string) => void, keyColors: KeyColors }> 
                             key={key}
                             onClick={() => onKeyPress(key)}
                             className={cn(
-                                'h-12 uppercase font-bold transition-colors duration-300',
+                                'h-11 sm:h-12 uppercase font-bold transition-colors duration-300',
                                 key.length > 1 ? 'px-3 flex-grow' : 'w-8 sm:w-10 flex-1',
                                 getKeyClass(key)
                             )}
@@ -468,9 +469,9 @@ export default function WordleGame() {
         } else if (key === 'del' || key === 'backspace') {
             setCurrentGuess(prev => prev.slice(0, -1));
         } else if (currentGuess.length < WORD_LENGTH && /^[a-zA-Z]$/.test(key)) {
-            setCurrentGuess(prev => prev.toUpperCase());
+            setCurrentGuess(prev => (prev + key).toUpperCase());
         }
-    }, [status, currentGuess.length, processGuess]);
+    }, [status, currentGuess, processGuess]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => onKeyPress(e.key.toLowerCase());
@@ -479,7 +480,7 @@ export default function WordleGame() {
     }, [onKeyPress]);
 
     return (
-        <div className="w-full max-w-md mx-auto flex flex-col h-full sm:h-screen">
+        <div className="w-full max-w-md mx-auto flex flex-col h-full">
             <Header stats={stats} />
             <div className="w-full flex-grow flex flex-col px-2 pt-2 pb-1">
                 <GameGrid
