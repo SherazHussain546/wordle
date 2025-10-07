@@ -257,7 +257,6 @@ export default function WordleGame() {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [keyColors, setKeyColors] = useState<KeyColors>({});
   const [validWords, setValidWords] = useState(new Set(WORDLIST));
-  const [isVerifying, setIsVerifying] = useState(false);
   
   const [isClient, setIsClient] = useState(false);
   useEffect(() => {
@@ -386,7 +385,7 @@ export default function WordleGame() {
 
   const onKeyPress = useCallback(
     (key: string) => {
-      if (status !== 'playing' || isVerifying) return;
+      if (status !== 'playing') return;
 
       if (key === 'enter') {
         processGuess();
@@ -396,7 +395,7 @@ export default function WordleGame() {
         setCurrentGuess((prev) => (prev + key));
       }
     },
-    [status, currentGuess, processGuess, isVerifying]
+    [status, currentGuess, processGuess]
   );
 
   useEffect(() => {
@@ -419,12 +418,6 @@ export default function WordleGame() {
     <div className="w-full max-w-md mx-auto flex flex-col h-full bg-background">
       <Header />
       <div className="w-full flex-grow flex flex-col px-2">
-        {isVerifying && (
-          <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-50">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="ml-2">Verifying word...</p>
-          </div>
-        )}
         <GameGrid guesses={guesses} currentGuess={currentGuess} evaluations={evaluations} currentRowIndex={currentRowIndex} />
       </div>
       <Keyboard onKeyPress={onKeyPress} keyColors={keyColors} />
