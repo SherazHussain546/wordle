@@ -257,6 +257,7 @@ export default function WordleGame() {
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [keyColors, setKeyColors] = useState<KeyColors>({});
   const [validWords, setValidWords] = useState(new Set(WORDLIST));
+  const [isVerifying, setIsVerifying] = useState(false);
   
   const [isClient, setIsClient] = useState(false);
   useEffect(() => {
@@ -356,14 +357,27 @@ export default function WordleGame() {
       toast({ title: 'Not enough letters', variant: 'destructive', duration: 1000 });
       return;
     }
-    
+
     const upperCaseGuess = currentGuess.toUpperCase();
 
     if (!validWords.has(upperCaseGuess)) {
-      toast({ title: 'Not in word list', variant: 'destructive', duration: 1000 });
-      return;
+      setIsVerifying(true);
+      try {
+        const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${upperCaseGuess}`);
+        if (!response.ok) {
+          toast({ title: 'Not in word list', variant: 'destructive', duration: 1000 });
+          return;
+        }
+        // If the word is valid, add it to our session's word list
+        setValidWords(prev => new Set(prev).add(upperCaseGuess));
+      } catch (error) {
+        toast({ title: 'Could not verify word', description: 'Please check your connection.', variant: 'destructive' });
+        return;
+      } finally {
+        setIsVerifying(false);
+      }
     }
-
+    
     const newGuesses = [...guesses, upperCaseGuess];
     const evaluation = getEvaluation(upperCaseGuess, dailyWord);
     const newEvals = [...evaluations, evaluation];
@@ -385,7 +399,7 @@ export default function WordleGame() {
 
   const onKeyPress = useCallback(
     (key: string) => {
-      if (status !== 'playing') return;
+      if (status !== 'playing' || isVerifying) return;
 
       if (key === 'enter') {
         processGuess();
@@ -395,7 +409,7 @@ export default function WordleGame() {
         setCurrentGuess((prev) => (prev + key));
       }
     },
-    [status, currentGuess, processGuess]
+    [status, currentGuess, processGuess, isVerifying]
   );
 
   useEffect(() => {
@@ -420,6 +434,14 @@ export default function WordleGame() {
       <div className="w-full flex-grow flex flex-col px-2">
         <GameGrid guesses={guesses} currentGuess={currentGuess} evaluations={evaluations} currentRowIndex={currentRowIndex} />
       </div>
+      {isVerifying && (
+          <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-10">
+            <div className="flex items-center gap-2 text-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Verifying word...</span>
+            </div>
+          </div>
+        )}
       <Keyboard onKeyPress={onKeyPress} keyColors={keyColors} />
       <GameOverDialog
         isOpen={isGameOver}
