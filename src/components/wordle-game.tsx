@@ -106,7 +106,7 @@ interface GameGridProps {
 const GameGrid: FC<GameGridProps> = memo(({ guesses, currentGuess, evaluations, currentRowIndex }) => {
   return (
     <div className="flex items-center justify-center w-full my-auto">
-      <div className="grid grid-rows-6 gap-1.5 w-full max-w-[300px] sm:max-w-[320px]">
+      <div className="grid grid-rows-6 gap-1.5 w-full max-w-[280px] sm:max-w-[300px]">
         {Array.from({ length: MAX_GUESSES }).map((_, i) => (
           <Row
             key={i}
