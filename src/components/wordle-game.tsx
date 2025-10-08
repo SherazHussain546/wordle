@@ -21,6 +21,7 @@ import AdBanner from './ad-banner';
 import Logo from './logo';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { WordleArticle } from './wordle-article';
+import { GameHubArticle } from './game-hub-article';
 
 // --- CONSTANTS ---
 const MAX_GUESSES = 6;
@@ -684,13 +685,21 @@ export default function WordleGame() {
       <div className="px-2 pb-4">
         <Instructions />
          <div className="px-2 pb-4">
-          <Accordion type="single" collapsible className="w-full">
+          <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
             <AccordionItem value="item-1">
               <AccordionTrigger className="text-xl font-bold hover:no-underline">
                 The Ultimate Guide to Wordle: From Novice to Grandmaster
               </AccordionTrigger>
               <AccordionContent>
                 <WordleArticle />
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-2">
+              <AccordionTrigger className="text-xl font-bold hover:no-underline">
+                A Deep Dive into the SYNC TECH GAME HUB
+              </AccordionTrigger>
+              <AccordionContent>
+                <GameHubArticle />
               </AccordionContent>
             </AccordionItem>
           </Accordion>
