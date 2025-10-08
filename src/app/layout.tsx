@@ -4,7 +4,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://daily-word-master.com'), // Replace with your actual domain
+  // It's recommended to set a metadataBase with your production domain
+  // metadataBase: new URL('https://your-domain.com'), 
   title: {
     default: 'WordleMaster - Free Online Daily Word Puzzle Game',
     template: `%s | WordleMaster`,
