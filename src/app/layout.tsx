@@ -2,7 +2,6 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase/client-provider';
-import Script from 'next/script';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://daily-word-master.com'), // Replace with your actual domain
@@ -46,11 +45,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
-        <Script
-          id="revenuecpmgate-script"
-          strategy="afterInteractive"
-          src="//pl27797943.revenuecpmgate.com/1d/92/44/1d92443fc0f2c722f56cba6927f6aa90.js"
-        />
+        <script type='text/javascript' src='//pl27797943.revenuecpmgate.com/1d/92/44/1d92443fc0f2c722f56cba6927f6aa90.js'></script>
       </head>
       <body className="font-body antialiased h-full">
         <FirebaseClientProvider>
