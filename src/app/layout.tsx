@@ -47,10 +47,9 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
         <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7334468000130380"
-          crossOrigin="anonymous"
+          id="revenuecpmgate-script"
           strategy="afterInteractive"
+          src="//pl27797943.revenuecpmgate.com/1d/92/44/1d92443fc0f2c722f56cba6927f6aa90.js"
         />
       </head>
       <body className="font-body antialiased h-full">
