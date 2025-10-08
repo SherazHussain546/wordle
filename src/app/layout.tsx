@@ -46,18 +46,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
         <script type='text/javascript' src='//pl27797943.revenuecpmgate.com/1d/92/44/1d92443fc0f2c722f56cba6927f6aa90.js'></script>
-        <script type='text/javascript' dangerouslySetInnerHTML={{ __html: `
-          window._tfa = window._tfa || [];
-          window._tfa.push({notify: 'event', name: 'page_view', id: 1937793});
-          !function (t, f, a, x) {
-                 if (!document.getElementById(x)) {
-                    t.async = 1;t.src = a;t.id=x;f.parentNode.insertBefore(t, f);
-                 }
-          }(document.createElement('script'),
-          document.getElementsByTagName('script')[0],
-          '//cdn.taboola.com/libtrc/unip/1937793/tfa.js',
-          'tb_tfa_script');
-        `}} />
       </head>
       <body className="font-body antialiased h-full">
         <FirebaseClientProvider>
